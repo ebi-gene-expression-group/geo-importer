@@ -76,7 +76,7 @@ filterGEOImport() {
 filterGEOImport $dbConnection geo_rnaseq.tsv > latest_geo_accessions.txt
 
 ## Download GEO impport soft files and anb convert to MAGE-TAB format
-bsub -q production-rh7 -cwd `pwd` -M 80000 -R "rusage[mem=80000]" -o geo_import.out -e geo_import.err "$projectRoot/geo_import/import_geo_subs.pl -f latest_geo_accessions.txt"
+bsub -q production-rh7 -cwd `pwd` -M 80000 -R "rusage[mem=80000]" -o geo_import.out -e geo_import.err "$projectRoot/geo_import/import_geo_subs.pl -x -f latest_geo_accessions.txt -o $ATLAS_PROD/GEO_import/GEOImportDownload "
 if [ $? -ne 0 ]; then
     "ERROR: import_geo_subs.pl LSF submission "  >&2  
     exit 1

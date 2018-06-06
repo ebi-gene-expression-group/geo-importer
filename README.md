@@ -1,9 +1,16 @@
 # geo-importer
+
+# geo import release v0.1.0
+
 Atlas Prod Importer for GEO
 
 import_geo_sub.pl runs the import of the GEO experiment files. The SOFT file and data files are downloaded to to desired location path fetched from config.yml files and converted to MAGE-TAB using new_soft2magetab.pl. You can find a log file from the soft->magetab conversion in this download directory.
 
 Usage: import_geo_subs.pl -x -f list_of_GSE_ids.txt -o output_path
+
+-o output_paths :
+ RNA-seq : $ATLAS_PROD/GEO_import/GEOImportDownload
+ single cell : $ATLAS_PROD/GEO_import/single_cell/GEOImportDownload
 
 for example, cat list_of_GSE_ids.txt, should result something like this GSE98816 GSE99058 GSE99235 The -x additional flag indicates the supplementary files should not be downloaded. For microarrays, the -x should not be used 
 (eg. usage : $ATLAS_PROD/sw/atlasinstall_prod/atlasprod/geo_import/import_geo_subs.pl -f list_of_GSE_ids.txt -x -o output_directory_path") as we need to download raw (.cel/txt) supplementary files

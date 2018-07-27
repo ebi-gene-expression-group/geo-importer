@@ -2,7 +2,7 @@
 
 # Source script from the same (prod or test) Atlas environment as this script
 scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-projectRoot=${scriptDir}/..
+projectRoot=${scriptDir}/../..
 source $projectRoot/geo_import/geo_import_routines.sh
 source $projectRoot/bash_util/generic_routines.sh
 
@@ -52,7 +52,7 @@ fi
 # Set up DB connection details
 dbConnection=$(get_db_connection $pgAtlasUser $dbIdentifier)
 if [ $? -ne 0 ]; then
-   "ERROR: dbConnection connection not established" >&2    
+    echo "ERROR: dbConnection connection not established" >&2    
     exit 1
 fi 
 

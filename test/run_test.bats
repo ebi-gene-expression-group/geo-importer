@@ -7,6 +7,12 @@ load setup_perl_env
  [ $status = 0 ]
 }
 
+@test "Running ENA to GEO ids pooling" {
+run projectRoot/geo_import/rnaseq_ena_gse_pooling.py --type $bulkORsinglecell --output $BATS_TMPDIR 
+file=$(ls $BATS_TMPDIR/geo_{$bulkORsinglecell}_rnaseq)
+[ -s $file ]
+}
+
 @test "Running the geo import script" {
 rm -rf $BATS_TMPDIR/GSE93979
 mkdir $BATS_TMPDIR/GSE93979

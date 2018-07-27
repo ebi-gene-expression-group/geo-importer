@@ -29,7 +29,8 @@ def parse_RNAseqAPI(api_url):
         else:
             print 'Got an error code:', response.status_code
     except requests.exceptions.RequestException as e:
-        return "Error: {}".format(e)
+        print e
+        sys.exit(1)
 
 # Retrieve ENA study ids and organism list
 def fetch_study_ids(response_data):
@@ -106,4 +107,3 @@ if __name__ == "__main__":
     gse = convert_gse_list(studies)
     print  "Number of GEO expriments loaded = %d" %(len(gse))
     write_dataframe_to_tsv(filename='geo_' + args['type'] + '_rnaseq', object = gse, output=args['output'])
-    

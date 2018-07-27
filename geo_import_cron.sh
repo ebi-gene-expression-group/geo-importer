@@ -1,85 +1,110 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Source script from the same (prod or test) Atlas environment as this script
 scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 projectRoot=${scriptDir}/..
 source $projectRoot/geo_import/geo_import_routines.sh
+source $projectRoot/bash_util/generic_routines.sh
+
 today="`eval date +%Y-%m-%d`"
 
-if [ $# -lt 3 ]; then
-        echo "Usage: $0 pgAtlasUser dbIdentifier email"
-        echo "e.g. $0 atlasprd3 pro suhaib@ebi.ac.uk"
-        exit 1
+USAGE="Usage: `basename $0` [-u pgAtlasUser ] [-d dbIdentifier ] [-t bulkORsinglecell ] [-s supportingFilesPath ] [-o output ]"
+    while getopts ":u:d:t:s:o:" params; do
+        case $params in
+            u)
+                pgAtlasUser=$OPTARG;
+                ;;
+            d)
+                dbIdentifier=$OPTARG;
+                ;;
+            t)
+                bulkORsinglecell=$OPTARG;
+                ;;
+            s)
+                supportingFilesPath=$OPTARG;
+                ;;
+            o)
+                outputPath=$OPTARG;
+                ;;
+            ?)
+                echo "Invalid Option Specified"
+                echo "$USAGE" 1>&2 ; exit 1
+                ;;
+        esac
+    done
+
+
+if ! [[ "$bulkORsinglecell" =~ ^(bulk|singlecell)$ ]]; then
+    echo "please provide type -t as 'bulk' or 'singlecell'"
+   exit 1;
 fi
 
-pgAtlasUser=atlasprd3
-dbIdentifier=pro
-email=$3
+if [ ! -d "$outputPath" ]; then
+    echo " output path $outputPath doesn't exist"
+    exit 1;
+fi
 
-
-GEO_FILES=$ATLAS_PROD/GEO_import/geo_import_supporting_files
-pushd $GEO_FILES
-
-## Script which retrieves ENA study ids and organsim names for RNA-seq experiments from ENA
-## converts ENA study ids to GEO (GSE) ids using API (eutils.ncbi.nlm.nih.gov/entrez/eutils/)
-## ENA ids that do not exist in GEO are recorded in rnaseq_ena_gse_pooling.log
-## Filters GSE ids that have already been loaded in AE2
-## output of the script list of filtered GSE_ids / ENA_study_id in geo_rnaseq.tsv
-$projectRoot/geo_import/rnaseq_ena_gse_pooling.py > rnaseq_ena_gse_pooling.$today.log
-
-if [ $? -ne 0 ]; then
-   "ERROR: rnaseq_ena_gse_pooling" >&2    
-    exit 1
-fi 
-
-## ENA study ids that do exist in GEO import
-makeNoGEOImportList() {
- gsePoolingLog=$1
- cat $gsePoolingLog | grep "Not in GEO" | awk -F" " '{print $5}' > ENA_IDs_NotInGEO.tmp
-
- test -s "$gsePoolingLog" || (  >&2 echo "$0 gse pooling log file not found: $gsePoolingLog" ; exit 1 )
-
- join -1 1 -2 2 -o 1.1,2.1 <(cat ENA_IDs_NotInGEO.tmp | sort ) <(curl -s 'https://www.ebi.ac.uk/fg/rnaseq/api/tsv/getBulkRNASeqStudiesInSRA' | sort -k 2) | sort -u 
- 
- rm ENA_IDs_NotInGEO.tmp
-}
-
-makeNoGEOImportList rnaseq_ena_gse_pooling.$today.log > NotInGEO_list.txt
-
+if [ ! -d "$supportingFilesPath" ]; then
+    echo "supporting file $supportingFilesPath path doesn't exist"
+    exit 1;
+fi
 
 # Set up DB connection details
-# get password file
-pgPassFile=$ATLAS_PROD/sw/${pgAtlasUser}_gxpatlas${dbIdentifier}
-if [ ! -s "$pgPassFile" ]; then
-    echo "ERROR: Cannot find password for $pgAtlasUser and $dbIdentifier" >&2  
-    exit 1
-fi
-
-pgAtlasDB=gxpatlas${dbIdentifier}
-pgAtlasHostPort=`cat $pgPassFile | awk -F":" '{print $1":"$2}'`
-pgAtlasUserPass=`cat $pgPassFile | awk -F":" '{print $5}'`
+dbConnection=$(get_db_connection $pgAtlasUser $dbIdentifier)
 if [ $? -ne 0 ]; then
-    email_log_error "ERROR: Failed to retrieve DB password" $log $email    
+   "ERROR: dbConnection connection not established" >&2    
     exit 1
 fi 
-dbConnection="postgresql://${pgAtlasUser}:${pgAtlasUserPass}@${pgAtlasHostPort}/${pgAtlasDB}"
 
-## remove ENA_IDs already been import before
-filterGEOImport() {
- dbConnection=$1
- GSEImport=$2
- GSELoaded=`echo "select geo_acc from atlas_eligibility;" | psql $dbConnection | tail -n +3 | head -n -2 | sed 's/ //g' | tr '\t' '\n' | sort -u` 
- comm -23 <(cat $GSEImport | cut -f 1 | sort ) <(echo -e $GSELoaded | tr ' ' '\n' | sort )
-}
+pushd $supportingFilesPath
+    ## Script which retrieves ENA study ids and organsim names for RNA-seq experiments from ENA
+    ## converts ENA study ids to GEO (GSE) ids using API (eutils.ncbi.nlm.nih.gov/entrez/eutils/)
+    ## ENA ids that do not exist in GEO are recorded in rnaseq_ena_gse_pooling.log
+    ## Filters GSE ids that have already been loaded in AE2
+    ## output of the script list of filtered GSE_ids/ENA_study_id as geo_${bulkORsinglecell}_rnaseq.tsv in desired output path
+    $projectRoot/geo_import/rnaseq_ena_gse_pooling.py --type $bulkORsinglecell --output $supportingFilesPath > ${bulkORsinglecell}_ena_gse_pooling.$today.log
+    if [ $? -ne 0 ]; then
+        echo "ERROR: ${bulkORsinglecell}_ena_gse_pooling" >&2    
+        exit 1
+    fi 
 
-## filter GSE ids that have already been imported in the atlas eligibility database
-filterGEOImport $dbConnection geo_rnaseq.tsv > latest_geo_accessions.txt
+    ## ENA_study_ids list that do no exist in GEO import that will help curators to fetch studies from ENA directly
+    makeNotInGEOList() {
+        gsePoolingLog=$1
+        type=$(echo $gsePoolingLog | awk -F'_' '{print $1}')
+        cat $gsePoolingLog | grep "Not in GEO" | awk -F" " '{print $5}' > ${bulkORsinglecell}_ENA_IDs_NotInGEO.tmp
+        test -s "$gsePoolingLog" || (  >&2 echo "$0 gse pooling log file not found: $gsePoolingLog" ; exit 1 )
+        if [ "$type" == "bulk" ]; then
+            join -1 1 -2 2 -o 1.1,2.1 <(cat ${bulkORsinglecell}_ENA_IDs_NotInGEO.tmp | sort ) <(curl -s 'https://www.ebi.ac.uk/fg/rnaseq/api/tsv/getBulkRNASeqStudiesInSRA' | tail -n +2 | sort -k 2) | sort -u
+        elif [ "$type" == "singlecell" ]; then
+            join -1 1 -2 2 -o 1.1,2.1 <(cat ${bulkORsinglecell}_ENA_IDs_NotInGEO.tmp | sort ) <(curl -s 'https://www.ebi.ac.uk/fg/rnaseq/api/tsv/getSingleCellStudies' | tail -n +2 | sort -k 2) | sort -u
+        fi
+        rm -rf ${bulkORsinglecell}_ENA_IDs_NotInGEO.tmp
+    }
+    makeNotInGEOList ${bulkORsinglecell}_ena_gse_pooling.$today.log  > ${bulkORsinglecell}_NotInGEO_list.txt
 
-## Download GEO impport soft files and anb convert to MAGE-TAB format
-bsub -q production-rh7 -cwd `pwd` -M 80000 -R "rusage[mem=80000]" -o geo_import.out -e geo_import.err "$projectRoot/geo_import/import_geo_subs.pl -x -f latest_geo_accessions.txt -o $ATLAS_PROD/GEO_import/GEOImportDownload "
-if [ $? -ne 0 ]; then
-    "ERROR: import_geo_subs.pl LSF submission "  >&2  
-    exit 1
-fi 
+    ## remove ENA_IDs already been import before
+    filterGEOImport() {
+        dbConnection=$1
+        GSEImport=$2
+        type=$(echo $GSEImport | awk -F'_' '{print $2}')
+        if [ "$type" == "bulk" ]; then
+            GSELoaded=$(echo "select geo_acc from rnaseq_atlas_eligibility;" | psql $dbConnection | tail -n +3 | head -n -2 | sed 's/ //g' | tr '\t' '\n' | sort -u)
+        elif [ "$type" == "singlecell" ]; then 
+            GSELoaded=$(echo "select geo_acc from sc_atlas_eligibility;" | psql $dbConnection | tail -n +3 | head -n -2 | sed 's/ //g' | tr '\t' '\n' | sort -u)
+        fi
+        comm -23 <(cat $GSEImport | cut -f 1 | sort ) <(echo -e $GSELoaded | tr ' ' '\n' | sort )
+    }
+    ## filter GSE ids that have already been imported in the atlas eligibility database
+    filterGEOImport $dbConnection geo_${bulkORsinglecell}_rnaseq.tsv > latest_${bulkORsinglecell}_geo_accessions.txt
+
+    ## Download GEO import soft files and convert to MAGE-TAB format (IDF and SDRF)
+    bsub -q production-rh7 -cwd `pwd` -M 80000 -R "rusage[mem=80000]" -o ${bulkORsinglecell}_geo_import_$today.out -e ${bulkORsinglecell}_geo_import_$today.err "$projectRoot/geo_import/import_geo_subs.pl -x -f latest_${bulkORsinglecell}_geo_accessions -o $outputPath"
+    if [ $? -ne 0 ]; then
+        "ERROR: import_geo_subs.pl LSF submission for $bulkORsinglecell"  >&2  
+        exit 1
+    fi 
+popd    
+
 
 ### 

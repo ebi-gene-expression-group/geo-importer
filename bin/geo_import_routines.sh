@@ -81,15 +81,15 @@ atlas_loaded_experiments(){
   # experiment that are already loaded
   if [ "$type" == "bulk" ]; then        
       expLoaded=$(echo -e "select accession from experiment where type like 'RNASEQ%';" \
-      | psql "$dbConnection" | tail -n +3 | head -n -2 | grep -v "\E-MTAB-" | grep -v "\E-ERAD" | sed 's/E-GEOD-/GSE/g' | sed 's/^ //g' | sort -u)
+      | psql "$dbConnection" | tail -n +3 | head -n -2 | grep "E-GEOD-" | sed 's/E-GEOD-/GSE/g' | sed 's/^ //g' | sort -u)
   elif [ "$type" == "singlecell" ]; then 
       expLoaded=$(echo -e "select accession from scxa_experiment where type like 'RNASEQ%';" \
-      | psql "$dbConnection" | tail -n +3 | head -n -2 | grep -v "\E-MTAB-" | grep -v "\E-ERAD" | sed 's/E-GEOD-/GSE/g' | sed 's/^ //g' | sort -u)
+      | psql "$dbConnection" | tail -n +3 | head -n -2 | grep "E-GEOD-" | sed 's/E-GEOD-/GSE/g' | sed 's/^ //g' | sort -u)
   fi
 
   # experiments ongoing in Atlas
   inAtlas=$(echo -e "select jobobject from atlas_jobs;" \
-    | psql "$dbConnection" | tail -n +3 | head -n -2 | grep -v "\E-MTAB-" | grep -v "\E-ERAD" | grep -v "any" | sed 's/E-GEOD-/GSE/g' | sed 's/^ //g' | sed '/^$/d' | sort -u)
+    | psql "$dbConnection" | tail -n +3 | head -n -2 | grep "E-GEOD-" | sed 's/E-GEOD-/GSE/g' | sed 's/^ //g' | sed '/^$/d' | sort -u)
 
   echo -e "$expLoaded\n$inAtlas" | sed 's/ //g'
 }
@@ -199,13 +199,14 @@ load_eligibility_to_db(){
    factor_value=$(exp_meta_info "$expAcc" "$pathToDownloads" | awk -F'\t' '{print $5}')
    exp_type=$(exp_meta_info "$expAcc" "$pathToDownloads" | awk -F'\t' '{print $6}')
 
-  if [ "$type" == "bulk" ]; then    
-        echo "insert into rnaseq_atlas_eligibility values (current_timestamp(0),'$atlas_id','$ena_id','$expAcc','$error_code', '$comment','$title','$organism','$no_of_samples','$no_of_replicate','$factor_value',current_timestamp(0),NULL,NULL,'$exp_type');" | psql "$dbConnection"
+  if [ $type == "bulk" ]; then
+       echo "Loading $expAcc to rnaseq_atlas_eligibility"    
+       echo "insert into rnaseq_atlas_eligibility values (current_timestamp(0),'$atlas_id','$ena_id','$expAcc','$error_code', '$comment','$title','$organism','$no_of_samples','$no_of_replicate','$factor_value',current_timestamp(0),NULL,NULL,'$exp_type');" | psql "$dbConnection"
 
-  elif [ "type" == "singlecell" ]; then 
+  elif [ $type == "singlecell" ]; then 
+        echo "Loading $expAcc to sc_atlas_eligibility"    
         echo "insert into sc_atlas_eligibility values (current_timestamp(0),'$atlas_id','$ena_id','$expAcc','$error_code','$comment','$title','$organism','$no_of_samples','$no_of_replicate','$factor_value',current_timestamp(0),NULL,NULL,'$exp_type');" | psql "$dbConnection"
   fi
-
 }
 
 

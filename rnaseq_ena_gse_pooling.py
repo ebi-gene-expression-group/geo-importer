@@ -1,19 +1,13 @@
-#!/usr/bin/env python
 # coding=utf-8
 import requests
 import pandas as pd
 import os
-import argparse
-
 __author__ = 'Suhaib Mohammed'
 
-# GEO eutils API
 BASE_URL = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/'
-
-# ArrayExpress API to retrieve existing downloaded GEO/ENA studies.
+BULK_RNA_SEQER_API='http://www.ebi.ac.uk/fg/rnaseq/api/json/getBulkRNASeqStudiesInSRA'
 AE2_ENA = 'https://www.ebi.ac.uk/fg/rnaseq/api/json/getAE2ToENAMapping'
 
-# Parse API curl
 def parse_RNAseqAPI(api_url):
     try:
         response = requests.get(api_url)
@@ -28,11 +22,10 @@ def parse_RNAseqAPI(api_url):
             print "resource you tried to access wasn’t found on the server."
         else:
             print 'Got an error code:', response.status_code
-    except requests.exceptions.RequestException as e:
-        print e
-        sys.exit(1)
+    except Exception:
+        pass
 
-# Retrieve ENA study ids and organism list
+
 def fetch_study_ids(response_data):
     if (type(response_data) is list):
         sc_studies = []
@@ -43,7 +36,6 @@ def fetch_study_ids(response_data):
         print "RNA-seq studies in ENA = %d " % (df.study_ids.count())
         return (df)
 
-# For a particular ENA-ID get associated GEO-id using GEO eutilis API
 def fetch_gse_ids(sraid):
     url = BASE_URL + 'esearch.fcgi'
     sra=sraid+'[ACCN]'
@@ -63,7 +55,7 @@ def fetch_gse_ids(sraid):
     elif len(r_id) == 2:
         print '2 GEO ids - %s' % sraid
 
-# convert it to GEO ids list
+
 def convert_gse_list(studies):
      gse_ids = []
      for idx, ids in enumerate(studies.study_ids):
@@ -72,38 +64,29 @@ def convert_gse_list(studies):
      gse_ids = pd.DataFrame(gse_ids)
      return gse_ids
 
-# Function to filter GEO ids that exist in ArrayExpress
 def exclude_atlas_loaded(AE2_ENA,studies):
     ae2_df = pd.read_json(AE2_ENA)
     df_load = studies[studies['study_ids'].isin(ae2_df.STUDY_ID) == False]
     return(df_load)
 
-# write dataframe in tsv format
-def write_dataframe_to_tsv(filename,object,output):
-    file_path = os.path.join(output, filename)
+def write_file_output(filename,object):
+    file_path = os.path.join('/nfs/production3/ma/home/atlas3-production/GEO_import/geo_import_supporting_files/', filename)
+    file_name = file_path + '.tsv'
+    with open(file_name, 'w') as fh:
+        for id in object:
+            fh.write(''.join(id) + '\n')
+
+def write_dataframe_to_tsv(filename,object):
+    file_path = os.path.join('/nfs/production3/ma/home/atlas3-production/GEO_import/geo_import_supporting_files/', filename)
     file_name = file_path + '.tsv'
     object.to_csv(file_name, sep='\t', index=False, header=None)
 
-# get all arguments
-def get_args(argv=None):
-    parser = argparse.ArgumentParser(
-        description='This program retrieves ENA-ids and organism list for bulk or singlecell RNA-seq experiments, '
-                    'and convert it to GEO ids. Filtering ids the ones which already exist in ArrayExpress')
-    parser.add_argument('-t', '--type', help='Please provide type as "bulk" or "singlecell"', required=True)
-    parser.add_argument('-o', '--output', help='Please provide absolute path to output directory"', required=True)
-    return vars(parser.parse_args())
 
 if __name__ == "__main__":
-    args = get_args()
-    if args['type'] == 'singlecell':
-        RNA_SEQ_API = 'http://www.ebi.ac.uk/fg/rnaseq/api/json/getSingleCellStudies'
-    elif args['type'] == 'bulk':
-        RNA_SEQ_API = 'http://www.ebi.ac.uk/fg/rnaseq/api/json/getBulkRNASeqStudiesInSRA'
-    print("Processing " + args['type'] + " RNA-seq studies in ENA")
-    print("Output - " + args['output'])
-    data = parse_RNAseqAPI(RNA_SEQ_API)
+    data = parse_RNAseqAPI(BULK_RNA_SEQER_API)
     studies = fetch_study_ids(data)
     load_studies = exclude_atlas_loaded(AE2_ENA, studies)
     gse = convert_gse_list(studies)
     print  "Number of GEO expriments loaded = %d" %(len(gse))
-    write_dataframe_to_tsv(filename='geo_' + args['type'] + '_rnaseq', object = gse, output=args['output'])
+    write_dataframe_to_tsv(filename='geo_rnaseq', object = gse)
+

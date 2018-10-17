@@ -37,7 +37,14 @@ geo_fixable(){
   pathToDownload=$2
 
   error_code=$(elibility_error_code "$expAcc" "$pathToDownloads")
-  ERROR_CODES=$ATLAS_PROD/GEO_import/geo_import_supporting_files/error_codes.txt
+  scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+  if [[ -s "$scriptDir/../error_codes.txt" ]]; then
+      ERROR_CODES=$scriptDir/../error_codes.txt
+  else
+      echo "ERROR: error_codes file doesn't exist"
+  fi
+
   code=$(echo "$error_code" | sed 's/,/\t/g' | cut -f 1 | sed -e 's/^\s*//')
   comment=$(cat "$ERROR_CODES" | grep -w "$code" | awk -F"\t" '{print $3}')
   echo -e "$comment"

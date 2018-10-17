@@ -5,7 +5,7 @@
 
 scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 projectRoot=${scriptDir}/../..
-source $projectRoot/geo_import/geo_import_routines.sh
+source $projectRoot/geo_import/bin/geo_import_routines.sh
 source $projectRoot/bash_util/generic_routines.sh
 
 today="`eval date +%Y-%m-%d`"

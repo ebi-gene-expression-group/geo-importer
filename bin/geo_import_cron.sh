@@ -62,7 +62,7 @@ pushd $supportingFilesPath
     ## ENA ids that do not exist in GEO are recorded in rnaseq_ena_gse_pooling.log
     ## Filters GSE ids that have already been loaded in AE2
     ## output of the script list of filtered GSE_ids/ENA_study_id as geo_${bulkORsinglecell}_rnaseq.tsv in desired output path
-    $projectRoot/geo_import/rnaseq_ena_gse_pooling.py --type $bulkORsinglecell --output $supportingFilesPath > ${bulkORsinglecell}_ena_gse_pooling.$today.log
+    $projectRoot/geo_import/bin/rnaseq_ena_gse_pooling.py --type $bulkORsinglecell --output $supportingFilesPath > ${bulkORsinglecell}_ena_gse_pooling.$today.log
     if [ $? -ne 0 ]; then
         echo "ERROR: ${bulkORsinglecell}_ena_gse_pooling" >&2    
         exit 1
@@ -99,7 +99,7 @@ pushd $supportingFilesPath
     filterGEOImport $dbConnection geo_${bulkORsinglecell}_rnaseq.tsv > latest_${bulkORsinglecell}_geo_accessions.txt
 
     ## Download GEO import soft files and convert to MAGE-TAB format (IDF and SDRF)
-    bsub -q production-rh7 -cwd `pwd` -M 80000 -R "rusage[mem=80000]" -o ${bulkORsinglecell}_geo_import_$today.out -e ${bulkORsinglecell}_geo_import_$today.err "$projectRoot/geo_import/import_geo_subs.pl -x -f latest_${bulkORsinglecell}_geo_accessions -o $outputPath"
+    bsub -q production-rh7 -cwd `pwd` -M 80000 -R "rusage[mem=80000]" -o ${bulkORsinglecell}_geo_import_$today.out -e ${bulkORsinglecell}_geo_import_$today.err "$projectRoot/bin/geo_import/import_geo_subs.pl -x -f latest_${bulkORsinglecell}_geo_accessions -o $outputPath"
     if [ $? -ne 0 ]; then
         "ERROR: import_geo_subs.pl LSF submission for $bulkORsinglecell"  >&2  
         exit 1

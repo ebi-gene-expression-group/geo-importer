@@ -1,0 +1,25 @@
+1	some data file(s) are missing	possibly fixable
+2	array design is not in Atlas	not fixable
+3	experiment has a type not eligible for Atlas	not fixable
+4	two-channel experiment	retired
+5	mixed-technology experiment (microarray and sequencing)	not fixable
+6	experiment has less than 6 assays, or does not have at least three replicates for at least 2 factor value combinations, in at least one array design	not fixable
+7	factor type or characteristics types are not from controlled vocabulary	fixable
+8	factor types are repeated	fixable
+9	experiment is in a GEO superseries	not fixable
+10	experiment has too many (>4) factor types	retired
+11	experiment has no factors at all	possibly fixable
+12	experiment has more than one source organism/species	not fixable
+13	units used are not in EFO	fixable
+14	sequencing checks (presence of run accession, fastq URI and submitted file names (for non-GEO, non-ERAD submissions)) on files with an AE accession	possibly fixable
+15	experiment may have technical replicates, so not continuing to count replicates of factors	retired
+16	no label information for a microarray labeled extract	possibly fixable
+17	species mismatch between source material and ADF for at least one sample	possibly fixable
+18	Species in SDRF does not match NCBI taxonomy "scientific name".	fixable
+19	Experiment has more than one organism in total.	not fixable
+20	Assay names or run accessions are not R-safe.	fixable
+21	Technical replicate IDs do not conform to agreed convention (e.g. "group 1").	fixable
+22	Experiment is present in failedCuration, failedQC, or minPvalGt0.5 directory.	possibly fixable
+23	Human disease experiment must have organism part and/or cell type and/or cell line (Open Targets requirement).	fixable
+24	Found technical replicate group(s) with only one assay/run.	fixable
+999	'Checking didn''t happen at all (e.g. due to invalid MAGE-TAB).'	fixable

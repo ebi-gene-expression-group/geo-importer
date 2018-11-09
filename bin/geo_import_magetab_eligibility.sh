@@ -4,9 +4,9 @@
 # number of assays, factor value, validation and eligibility status required for curation.
 
 scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-projectRoot=${scriptDir}/../..
+projectRoot=${scriptDir}/..
 source $projectRoot/bin/geo_import_routines.sh
-source $projectRoot/../curation/bash_util/generic_routines.sh
+source $projectRoot/../bash_util/generic_routines.sh
 
 today="`eval date +%Y-%m-%d`"
 

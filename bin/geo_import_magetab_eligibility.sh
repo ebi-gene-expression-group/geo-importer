@@ -5,8 +5,8 @@
 
 scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 projectRoot=${scriptDir}/../..
-source $projectRoot/geo_import/bin/geo_import_routines.sh
-source $projectRoot/bash_util/generic_routines.sh
+source $projectRoot/bin/geo_import_routines.sh
+source $projectRoot/../curation/bash_util/generic_routines.sh
 
 today="`eval date +%Y-%m-%d`"
 
@@ -92,13 +92,13 @@ find ${pathToDownloads} -mindepth 1 -maxdepth 1 | xargs -n1 basename \
         
      if [[ -e "${expAcc}.idf.txt" ]]; then
           echo "splitting MAGE-TAB - $expAcc"
-		      $projectRoot/curation/split_magetab.pl ${expAcc}.idf.txt  
+		      $projectRoot/../curation/split_magetab.pl ${expAcc}.idf.txt  
             if  [ ! -s ${expAcc}_atlas_eligibility.out ]; then
            		     echo "validating MAGE-TAB - $expAcc"
-           		     $projectRoot/curation/validate_magetab.pl -m ${expAcc}.idf.txt > ${expAcc}_validate_magetab.out
+           		     $projectRoot/../curation/validate_magetab.pl -m ${expAcc}.idf.txt > ${expAcc}_validate_magetab.out
          
            		     echo "Atlas eligility check - $expAcc"
-           		     $projectRoot/curation/check_atlas_eligibility.pl -m ${expAcc}.idf.txt > ${expAcc}_atlas_eligibility.out
+           		     $projectRoot/../curation/check_atlas_eligibility.pl -m ${expAcc}.idf.txt > ${expAcc}_atlas_eligibility.out
              
         		       echo "Loading in the database - $expAcc"
            		     exp_loading_check $expAcc $geoEnaMappingFile $dbConnection $bulkORsinglecell $pathToDownloads

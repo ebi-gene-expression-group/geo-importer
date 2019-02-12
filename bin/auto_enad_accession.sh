@@ -2,7 +2,7 @@
 
 scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 projectRoot=${scriptDir}/..
-source $projectRoot/bash_util/generic_routines.sh
+source $projectRoot/../bash_util/generic_routines.sh
 
 # Capture call arguments
 if [ $# -lt 2 ]; then

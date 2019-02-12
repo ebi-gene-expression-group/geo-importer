@@ -16,7 +16,7 @@ dbIdentifier=$2
 
 dbConnection=$(get_db_connection $pgAtlasUser $dbIdentifier)
 
-max_db_id=$(psql -d "$dbConnection" -a -f auto_enad_accession.sql | grep "E-ENAD-" | tail -n1 | sed 's/[^0-9]*//g')
+max_db_id=$(psql -d "$dbConnection" -a -f $scriptDir/auto_enad_accession.sql | grep "E-ENAD-" | tail -n1 | sed 's/[^0-9]*//g')
 
 max_single_id=$(find $ATLAS_PROD/singlecell/experiment -type f -name "E-ENAD-*" -exec basename {} ';' | sed 's/[^0-9]*//g' | sort -nr | head -n1)
 

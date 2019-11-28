@@ -54,16 +54,19 @@ def fetch_gse_ids(sraid):
       print 'eutils gave Error 503. Waiting 20 secs then trying again'
       time.sleep(20)
       return fetch_gse_ids(sraid)
-    if len(r.json()['esearchresult']['idlist']) != 0:
-        r_id = r.json()['esearchresult']['idlist']
-        if len(r_id) == 1:
-            r_id = r_id[0].encode('utf-8')
-            gse_id = "GSE" + str(int(r_id[1:]))
-            return gse_id
-        elif len(r_id) == 2:
-            print '2 GEO ids - %s' % sraid
-    else:
-        print 'Not in GEO - %s' % sraid
+    try:
+        if len(r.json()['esearchresult']['idlist']) != 0:
+            r_id = r.json()['esearchresult']['idlist']
+            if len(r_id) == 1:
+                r_id = r_id[0].encode('utf-8')
+                gse_id = "GSE" + str(int(r_id[1:]))
+                return gse_id
+            elif len(r_id) == 2:
+                print '2 GEO ids - %s' % sraid
+        else:
+            print 'Not in GEO - %s' % sraid
+    except (ValueError, KeyError):
+        print ' Not in GEO - %s' % sraid
 
 # convert it to GEO ids list
 def convert_gse_list(studies):

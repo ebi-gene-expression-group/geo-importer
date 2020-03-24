@@ -99,7 +99,7 @@ pushd $supportingFilesPath
     filterGEOImport $dbConnection geo_${bulkORsinglecell}_rnaseq.tsv > latest_${bulkORsinglecell}_geo_accessions.txt
 
     ## Download GEO import soft files and convert to MAGE-TAB format (IDF and SDRF)
-    bsub -q production-rh7 -cwd `pwd` -M 80000 -R "rusage[mem=80000]" -o ${bulkORsinglecell}_geo_import_$today.out -e ${bulkORsinglecell}_geo_import_$today.err "$projectRoot/bin/import_geo_subs.pl -x -f latest_${bulkORsinglecell}_geo_accessions.txt -o $outputPath"
+    bsub -q production-rh74 -cwd `pwd` -M 80000 -R "rusage[mem=80000]" -o ${bulkORsinglecell}_geo_import_$today.out -e ${bulkORsinglecell}_geo_import_$today.err "$projectRoot/bin/import_geo_subs.pl -x -f latest_${bulkORsinglecell}_geo_accessions.txt -o $outputPath"
     if [ $? -ne 0 ]; then
         "ERROR: import_geo_subs.pl LSF submission for $bulkORsinglecell"  >&2  
         exit 1

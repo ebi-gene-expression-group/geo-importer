@@ -48,18 +48,30 @@ log4perl.appender.SCREEN.layout.ConversionPattern = %d %p %m %n
 Log::Log4perl::init( \$conf );
 my $logger = Log::Log4perl->get_logger();
 
-my $map_path = $CONFIG->get_ENA_ACC_MAP;
-
 if ( my $proxy = $CONFIG->get_HTTP_PROXY )
 {
 	$ua->proxy( ['http'], $proxy );
 }
 
+sub check_env_var {
+  my $var = shift;
+  my $suggestion = shift;
+
+  unless(defined $ENV{$var}) {
+    $logger->error( "Please define $var env var" );
+    $logger->info( "Usually for $var: $suggestion" ) if(defined $suggestion);
+    exit 1;
+  }
+}
+
+check_env_var('FASTQ_FILE_REPORT');
+
+
 ########
 # MAIN #
 ########
 
-my ( $listfile, $set_curator, $skip_download, $validate, $efo_mapping, $output_dir );
+my ( $listfile, $set_curator, $skip_download, $validate, $efo_mapping, $ena_mapping, $output_dir );
 
 GetOptions(
 			"f|file=s"       => \$listfile,
@@ -67,6 +79,7 @@ GetOptions(
 			"x|skip_download" => \$skip_download,
 			"v|validate"      => \$validate,
 			"e|efo_mapping"   => \$efo_mapping,
+			"n|ena_mapping"   => \$ena_mapping,
 			"o|output_dir=s"  => \$output_dir,
 );
 
@@ -100,6 +113,8 @@ unless ($listfile && $output_dir)
               (usually this is not the case).
               
      -x :   skip download of supplementary data files (filename will still be included in SDRF)
+
+     -n :   use this flag to download fastq file report from ena
      
      -v :  Use this flag if you just want to validate files after importing
               and do not want to run the usual checking and export,
@@ -133,9 +148,10 @@ if ($efo_mapping)
 }
 
 # Download latest version of ENA accession map file
-if ($map_path)
+if ($ena_mapping)
 {
-	my $download_from = "ftp://ftp.sra.ebi.ac.uk/meta/list/fastqFileReport.gz";
+	my $map_path = $CONFIG->get_ENA_ACC_MAP;
+	my $download_from = $ENV{'FASTQ_FILE_REPORT'};
 	$logger->info("Downloading $download_from");
 	my $rc = getstore( $download_from, "$map_path.gz" );
 	if ( is_error($rc) )

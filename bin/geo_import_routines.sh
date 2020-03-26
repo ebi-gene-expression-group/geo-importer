@@ -32,6 +32,43 @@ res=$(geo_experiment "$expAcc")
   fi
 }
 
+get_pg_db_connection(){
+    user="atlasprd3"
+    dbIdentifier="pro"
+
+    local OPTARG OPTIND opt
+    while getopts ":u:d:t:" opt; do
+      case $opt in
+        u)
+          user=$OPTARG;
+          ;;
+        d)
+          dbIdentifier=$OPTARG;
+          ;;
+        t)
+          type=$OPTARG;
+          ;;
+        ?)
+           >&2 echo "Unknown option: $OPTARG"
+            return 1
+          ;;
+      esac
+    done
+    pgPassFile=$ATLAS_PROD/sw/${user}_gxpatlas${dbIdentifier}
+    if [ ! -s "$pgPassFile" ]; then
+        >&2 echo "ERROR: Cannot find password for $user and $dbIdentifier"
+        return 1
+    fi
+    pgAtlasDB=gxp${type}${dbIdentifier}
+    pgAtlasHostPort=`cat $pgPassFile | awk -F":" '{print $1":"$2}'`
+    pgAtlasUserPass=`cat $pgPassFile | awk -F":" '{print $5}'`
+    if [ $? -ne 0 ]; then
+        >&2 echo "ERROR: Failed to retrieve db pass"
+        return 1
+    fi
+    echo "postgresql://${user}:${pgAtlasUserPass}@${pgAtlasHostPort}/${pgAtlasDB}"
+}
+
 geo_fixable(){
   expAcc=$1
   pathToDownload=$2
@@ -90,8 +127,8 @@ atlas_loaded_experiments(){
       expLoaded=$(echo -e "select accession from experiment where type like 'RNASEQ%';" \
       | psql "$dbConnection" | tail -n +3 | head -n -2 | grep "E-GEOD-" | sed 's/E-GEOD-/GSE/g' | sed 's/^ //g' | sort -u)
   elif [ "$type" == "singlecell" ]; then 
-      expLoaded=$(echo -e "select accession from scxa_experiment where type like 'RNASEQ%';" \
-      | psql "$dbConnection" | tail -n +3 | head -n -2 | grep "E-GEOD-" | sed 's/E-GEOD-/GSE/g' | sed 's/^ //g' | sort -u)
+      expLoaded=$(echo -e "select accession from experiment where type like 'SINGLE_CELL%';" \
+      | psql "$scdbConnection" | tail -n +3 | head -n -2 | grep "E-GEOD-" | sed 's/E-GEOD-/GSE/g' | sed 's/^ //g' | sort -u)
   fi
 
   # experiments ongoing in Atlas

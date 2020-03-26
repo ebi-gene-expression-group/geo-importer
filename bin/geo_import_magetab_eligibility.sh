@@ -76,7 +76,16 @@ dbConnection=$(get_db_connection $pgAtlasUser $dbIdentifier)
 if [ $? -ne 0 ]; then
    "ERROR: dbConnection connection not established" >&2    
     exit 1
-fi 
+fi  
+
+# Set up sc DB connection details
+if  [ "$bulkORsinglecell" == 'singlecell' ]; then
+    scdbConnection=$(get_pg_db_connection -u 'atlasprd3' -d 'pro' -t 'scxa')
+    if [ $? -ne 0 ]; then
+      "ERROR: scdbConnection connection not established" >&2    
+      exit 1
+    fi
+fi
 
 # This section looks at each experiment within GEOImportDownloads folder
 # Splits merged MGAE-TAB to IDF and SDRF

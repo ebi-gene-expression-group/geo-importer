@@ -154,8 +154,8 @@ pushd "$pathToDownloads"
       mkdir -p "$exp_dir"
     fi  
 
-    ## while copying preserve time stamps
-    rsync -ar $pathToDownloads/$f/*txt* $exp_dir/
+    ## while copying preserve time stamps and exlude merged magetab
+    rsync -ar --exclude="*.idf.txt" $pathToDownloads/$f/*txt* $exp_dir/
 
     # rename files with ArrayExpress accession prefix
     rename_magetab_files $exp_dir

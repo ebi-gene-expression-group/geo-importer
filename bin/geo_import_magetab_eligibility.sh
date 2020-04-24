@@ -101,7 +101,7 @@ find ${pathToDownloads} -mindepth 1 -maxdepth 1 | xargs -n1 basename \
         
      if [[ -e "${expAcc}.idf.txt" ]]; then
           echo "splitting MAGE-TAB - $expAcc"
-		      $projectRoot/../curation/split_magetab.pl ${expAcc}.idf.txt  
+		      $projectRoot/../curation/split_magetab.pl ${expAcc}.merged.idf.txt  
             if  [ ! -s ${expAcc}_atlas_eligibility.out ]; then
            		     echo "validating MAGE-TAB - $expAcc"
            		     $projectRoot/../curation/validate_magetab.pl -m ${expAcc}.idf.txt > ${expAcc}_validate_magetab.out

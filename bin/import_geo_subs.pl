@@ -257,7 +257,7 @@ while ( my $line = <$list_fh> )
 	else
 	{
 
-		$spreadsheet = File::Spec->catfile( $target_dir, "$accn.idf.txt" );
+		$spreadsheet = File::Spec->catfile( $target_dir, "$accn.merged.idf.txt" );
 
 		# Copy contents of IDF and SDRF into single file for easier curation
 		# (unless there are multiple sdrfs)

@@ -47,23 +47,31 @@ def fetch_study_ids(response_data):
 def fetch_gse_ids(sraid):
     url = BASE_URL + 'esearch.fcgi'
     sra=sraid+'[ACCN]'
+    print 'checking .. %s' % sraid
     data = {'db': 'gds', 'term': sra, 'retmode': 'json'}
     r = requests.get(url, params=data)
     if 'Error 503' in r.text:
-      print 'eutils gave Error 503. Waiting 20 secs then trying again'
-      time.sleep(20)
-      return fetch_gse_ids(sraid)
+        print 'eutils gave Error 503. Waiting 20 secs then trying again'
+        time.sleep(20)
+        return fetch_gse_ids(sraid)
+
     try:
-        r_id=r.json()['esearchresult']['idlist']
-        if len(r_id) == 1:
-            r_id = r_id[0].encode('utf-8')
-            gse_id = "GSE" + str(int(r_id[1:]))
-            print '%s' % gse_id
-            return gse_id
-        elif len(r_id) == 0:
-            print 'Not in GEO - %s' % sraid
-        elif len(r_id) == 2:
-            print '2 GEO ids - %s' % sraid
+        if 'esearchresult' in r.json():
+            if 'idlist' in r.json()['esearchresult']:
+                r_id=r.json()['esearchresult']['idlist']
+                if len(r_id) == 1:
+                    r_id = r_id[0].encode('utf-8')
+                    gse_id = "GSE" + str(int(r_id[1:]))
+                    print '%s' % gse_id
+                    return gse_id
+                elif len(r_id) == 0:
+                    print 'Not in GEO - %s' % sraid
+                elif len(r_id) == 2:
+                    print '2 GEO ids - %s' % sraid
+            else:
+                print 'idlist missing in json - %s' % sraid
+        else:
+             print 'esearchresult missing in json - %s' % sraid
     except KeyError:
         print 'Not in GEO - %s' % sraid
 

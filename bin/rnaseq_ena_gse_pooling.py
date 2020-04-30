@@ -49,13 +49,13 @@ def fetch_gse_ids(sraid):
     sra=sraid+'[ACCN]'
     print 'checking .. %s' % sraid
     data = {'db': 'gds', 'term': sra, 'retmode': 'json'}
-    r = requests.get(url, params=data)
-    if 'Error 503' in r.text:
-        print 'eutils gave Error 503. Waiting 20 secs then trying again'
-        time.sleep(20)
-        return fetch_gse_ids(sraid)
 
     try:
+        r = requests.get(url, params=data)
+        if 'Error 503' in r.text:
+            print 'eutils gave Error 503. Waiting 20 secs then trying again'
+            time.sleep(20)
+            return fetch_gse_ids(sraid)
         if 'esearchresult' in r.json():
             if 'idlist' in r.json()['esearchresult']:
                 r_id=r.json()['esearchresult']['idlist']
@@ -72,8 +72,8 @@ def fetch_gse_ids(sraid):
                 print 'idlist missing in json - %s' % sraid
         else:
              print 'esearchresult missing in json - %s' % sraid
-    except KeyError:
-        print 'Not in GEO - %s' % sraid
+    except Exception as e:
+        print(e)
 
 # convert it to GEO ids list
 def convert_gse_list(studies):

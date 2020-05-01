@@ -99,7 +99,7 @@ find ${pathToDownloads} -mindepth 1 -maxdepth 1 | xargs -n1 basename \
     expAcc=$(echo -e $exp | sed 's/_output//g')
     pushd $pathToDownloads/$exp/
         
-     if [[ -e "${expAcc}.idf.txt" ]]; then
+     if [[ -e "${expAcc}.merged.idf.txt" ]]; then
           echo "splitting MAGE-TAB - $expAcc"
 		      $projectRoot/../curation/split_magetab.pl ${expAcc}.merged.idf.txt  
             if  [ ! -s ${expAcc}_atlas_eligibility.out ]; then

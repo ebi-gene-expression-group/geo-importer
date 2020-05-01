@@ -8,7 +8,7 @@ import argparse
 __author__ = 'Suhaib Mohammed'
 
 # GEO eutils API
-BASE_URL = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/'
+BASE_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/'
 
 # ArrayExpress API to retrieve existing downloaded GEO/ENA studies.
 AE2_ENA = 'https://www.ebi.ac.uk/fg/rnaseq/api/json/getAE2ToENAMapping'
@@ -47,7 +47,7 @@ def fetch_study_ids(response_data):
 def fetch_gse_ids(sraid):
     url = BASE_URL + 'esearch.fcgi'
     sra=sraid+'[ACCN]'
-    print 'checking .. %s' % sraid
+  #  print 'checking .. %s' % sraid
     data = {'db': 'gds', 'term': sra, 'retmode': 'json'}
 
     try:
@@ -72,8 +72,8 @@ def fetch_gse_ids(sraid):
                 print 'idlist missing in json - %s' % sraid
         else:
              print 'esearchresult missing in json - %s' % sraid
-    except Exception as e:
-        print(e)
+    except requests.exceptions.RequestException as e:
+        print e
 
 # convert it to GEO ids list
 def convert_gse_list(studies):

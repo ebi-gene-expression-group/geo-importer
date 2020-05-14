@@ -136,7 +136,7 @@ $converter->parse_soft;
 $converter->normalize_chars;
 
 $logger->info("Writing MAGE-TAB");
-$converter->write_magetab;
+$converter->write_magetab("merged");
 
 # Nasty hack to change date formats for release date
 my $idf_path = File::Spec->catfile( $target, $converter->get_acc . ".merged.idf.txt" );

@@ -25,7 +25,6 @@ use LWP::Simple qw($ua getstore is_success is_error);
 use IO::CaptureOutput qw(capture);
 
 use EBI::FGPT::Resource::Database;
-#use EBI::FGPT::Resource::Database::GXA;
 use EBI::FGPT::Config qw($CONFIG);
 use ArrayExpress::AutoSubmission::DB::Experiment;
 use ArrayExpress::AutoSubmission::Creator;

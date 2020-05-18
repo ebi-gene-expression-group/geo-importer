@@ -136,10 +136,10 @@ $converter->parse_soft;
 $converter->normalize_chars;
 
 $logger->info("Writing MAGE-TAB");
-$converter->write_magetab;
+$converter->write_magetab("merged");
 
 # Nasty hack to change date formats for release date
-my $idf_path = File::Spec->catfile( $target, $converter->get_acc . ".idf.txt" );
+my $idf_path = File::Spec->catfile( $target, $converter->get_acc . ".merged.idf.txt" );
 my @args =
   ( '/usr/bin/perl', '-i', '-pe', 's/([\d]{4}-[\d]{2}-[\d]{2})T.*/$1/g', $idf_path );
 $logger->info("Fixing date format in IDF: @args");

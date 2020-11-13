@@ -6,7 +6,7 @@ source $projectRoot/../bash_util/generic_routines.sh
 source $projectRoot/bin/geo_import_routines.sh
 
 # Capture call arguments
-if [ $# -lt 2 ]; then
+if [ $# -lt 1 ]; then
     echo "Usage: $0 <accession_type>"
     echo "e.g. $0 ENAD" >&2
     exit 1;
@@ -21,10 +21,7 @@ scdbConnection=$(get_pg_db_connection -u 'atlasprd3' -d 'pro' -t 'scxa')
 max_db_id=$(psql -d "$dbConnection" -a -v TYPE="E-${accession_type}" -f $scriptDir/auto_accession.sql | grep "E-${accession_type}-" | tail -n1 | sed 's/[^0-9]*//g')
 max_scdb_id=$(echo -e "select accession from experiment where accession like '%${accession_type}%'" | psql -tA -F $'\t' $scdbConnection | sort | tail -n1 | sed 's/[^0-9]*//g')
 
-psql -d "$scdbConnection" -a -v TYPE="E-${accession_type}" -f $scriptDir/auto_enad_accession.sql | grep "E-${accession_type}-" | tail -n1 | sed 's/[^0-9]*//g')
-
 ## check for ongoing bulk and single cell studies
-
 ## Ongoing bulk in atlas jobs
 max_atlasdb_id=$(echo -e "select jobobject from atlas_jobs where JOBOBJECT like '%${accession_type}%'" | psql -tA -F $'\t' $dbConnection | sort | tail -n1 | sed 's/[^0-9]*//g')
 

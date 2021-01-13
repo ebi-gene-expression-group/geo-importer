@@ -14,6 +14,9 @@ fi
 
 accession_type=$1
 
+[ ! -z ${SCXA_METADATA_REPO+x} ] || ( echo "SCXA_METADATA_REPO ie. Gitlab repo" && exit 1 )
+
+
 dbConnection=$(get_db_connection atlasprd3 pro)
 scdbConnection=$(get_pg_db_connection -u 'atlasprd3' -d 'pro' -t 'scxa')
 
@@ -36,8 +39,15 @@ popd > /dev/null
 ## Ongoing single cell
 max_sc_id=$(find $meta_clone/${accession_type} -type f -name "E-$accession_type-*" -exec basename {} ';' | sed 's/[^0-9]*//g' | sort -nr | head -n1)
 
+## ongoing curation 
+if [ $accession_type == 'CURD' ]; then
+	max_curation=$(find $AE2_BASE_DIR/${accession_type} -type d -exec basename {} ';' |  sed 's/[^0-9]*//g' | sort -nr | head -n1)
+elif [ $accession_type == 'ENAD' ]; then
+	max_curation=$(find $ATLAS_PROD/ENA_import/${accession_type} -type d -exec basename {} ';' |  sed 's/[^0-9]*//g' | sort -nr | head -n1)
+fi
+
 ## maximum id from all sources
-max_id=$(echo -e "$max_db_id"'\n'"$max_scdb_id"'\n'"$max_atlasdb_id"'\n'"$mmax_sc_id" | sort -nr | head -n1)
+max_id=$(echo -e "$max_db_id"'\n'"$max_scdb_id"'\n'"$max_atlasdb_id"'\n'"$max_sc_id"'\n'"$max_curation" | sort -nr | head -n1)
 
 echo "E-${accession_type}-$(($max_id+1))"
 

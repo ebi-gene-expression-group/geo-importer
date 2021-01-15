@@ -49,6 +49,10 @@ fi
 ## maximum id from all sources
 max_id=$(echo -e "$max_db_id"'\n'"$max_scdb_id"'\n'"$max_atlasdb_id"'\n'"$max_sc_id"'\n'"$max_curation" | sort -nr | head -n1)
 
-echo "E-${accession_type}-$(($max_id+1))"
+## current max curated
+echo "Current curated maximum accession : E-${accession_type}-$(($max_id))"
+
+## next accession
+echo "Next accession : E-${accession_type}-$(($max_id+1))"
 
 echo "update reference_ids SET max_id='$(($max_id+1))' where acc_prefix='E-${accession_type}';" | psql "$dbConnection" > /dev/null

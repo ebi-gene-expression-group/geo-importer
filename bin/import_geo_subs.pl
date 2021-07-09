@@ -293,7 +293,7 @@ while ( my $line = <$list_fh> )
 				$file =~ s/file://g;
 				my $sdrf_path = File::Spec->catfile( $data_dir, $file );
 				my $command =
-				  ( "/usr/bin/perl -i -pe " . " 's/(?<!fastq)\.gz//g' " . $sdrf_path );
+				  ( "perl -i -pe " . " 's/(?<!fastq)\.gz//g' " . $sdrf_path );
 				system($command);
 			}
 		}

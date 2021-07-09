@@ -141,7 +141,7 @@ $converter->write_magetab("merged");
 # Nasty hack to change date formats for release date
 my $idf_path = File::Spec->catfile( $target, $converter->get_acc . ".merged.idf.txt" );
 my @args =
-  ( '/usr/bin/perl', '-i', '-pe', 's/([\d]{4}-[\d]{2}-[\d]{2})T.*/$1/g', $idf_path );
+  ( 'perl', '-i', '-pe', 's/([\d]{4}-[\d]{2}-[\d]{2})T.*/$1/g', $idf_path );
 $logger->info("Fixing date format in IDF: @args");
 system(@args) == 0
   or $logger->error("Could not fix date formats in IDF");
@@ -149,7 +149,7 @@ system(@args) == 0
 # This is required to remove any quotes around values in IDF-
 # no idea where these quotes come from
 # suspect its a windows thing
-system( '/usr/bin/perl', '-i', '-pe', 's/"//g', $idf_path ) == 0
+system( 'perl', '-i', '-pe', 's/"//g', $idf_path ) == 0
   or $logger->warn("Could not remove quotes within IDF");
 
 ## Tidy up SDRF
@@ -162,10 +162,10 @@ foreach my $sdrf_type (@sdrf_type) {
 	if ( -e $sdrf_path ) {
 
 		#This is required to remove any quotes around values
-		system( '/usr/bin/perl', '-i', '-pe', 's/"//g', $sdrf_path ) == 0
+		system( 'perl', '-i', '-pe', 's/"//g', $sdrf_path ) == 0
 		  or $logger->warn("Could not remove quotes within sdrf");
 
-		system( '/usr/bin/perl', '-i', '-pe', 's/file://g', $sdrf_path ) == 0
+		system( 'perl', '-i', '-pe', 's/file://g', $sdrf_path ) == 0
 		  or $logger->warn("Could not remove file: prefix from file names in SDRF");
 
 		my @sdrf_args = (

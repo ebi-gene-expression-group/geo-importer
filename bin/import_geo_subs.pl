@@ -19,6 +19,7 @@ use Archive::Extract;
 use File::Spec;
 use File::Basename;
 use File::Copy;
+use File::Find;
 use File::Path;
 use Getopt::Long;
 use LWP::Simple qw($ua getstore is_success is_error);
@@ -331,6 +332,9 @@ while ( my $line = <$list_fh> )
 		  grep { $_ !~ /^\./ } readdir($dir);
 		closedir $dir;
 	}
+
+	# Remove all the 'soft' files when everything is done
+	find({ wanted => \&rm_soft, no_chdir=>1}, $target_dir);
 }
 
 close($list_fh);
@@ -344,4 +348,15 @@ if (@failed_lines)
 	  or $logger->logdie("Error: could not open $fail_file for writing - $!");
 	print $fh join "\n", @failed_lines;
 	close $fh;
+}
+
+sub rm_soft
+{
+	my $F = $File::Find::name;
+
+	if ($F =~ /soft$/ )
+	{
+		print "$F will be removed\n";
+		unlink $F;
+	}
 }

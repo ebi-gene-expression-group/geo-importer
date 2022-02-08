@@ -26,48 +26,30 @@ res=$(geo_experiment "$expAcc")
   if [ $? -ne 0 ]; then
        echo "ERROR: Not GEO experiment type - $expAcc" >&2
   fi
-  
+
   if [ -e "$pathToDownloads/${expAcc}_output/${expAcc}_atlas_eligibility.out" ]; then
     cat "$pathToDownloads/${expAcc}_output/${expAcc}_atlas_eligibility.out" | grep "Atlas eligibility fail codes:" | awk -F":" '{print $2}' | sed 's/-//g'
   fi
 }
 
 get_pg_db_connection(){
-    user="atlasprd3"
-    dbIdentifier="pro"
 
-    local OPTARG OPTIND opt
-    while getopts ":u:d:t:" opt; do
-      case $opt in
-        u)
-          user=$OPTARG;
-          ;;
-        d)
-          dbIdentifier=$OPTARG;
-          ;;
-        t)
-          type=$OPTARG;
-          ;;
-        ?)
-           >&2 echo "Unknown option: $OPTARG"
-            return 1
-          ;;
-      esac
-    done
-    pgPassFile=$ATLAS_PROD/sw/${user}_gxpatlas${dbIdentifier}
-    if [ ! -s "$pgPassFile" ]; then
-        >&2 echo "ERROR: Cannot find password for $user and $dbIdentifier"
-        return 1
+  # Try to retrive DB connection string from ENV variable
+  if [ ! -z  ${dbConnection} ]; then
+    # Check that it looks like a Postresql connection
+    # Expected format "postgresql://${user}:${pgAtlasUserPass}@${pgAtlasHostPort}/${pgAtlasDB}"
+    if [[ $dbConnection =~ ^postgresql:\/\/.+:.+@.+:.+:.+$ ]]; then
+        echo $dbConnection
+    else
+      >&2 echo "ERROR: DB connection string doesn't look like a database connection."
+      return 1
     fi
-    pgAtlasDB=gxp${type}${dbIdentifier}
-    pgAtlasHostPort=`cat $pgPassFile | awk -F":" '{print $1":"$2}'`
-    pgAtlasUserPass=`cat $pgPassFile | awk -F":" '{print $5}'`
-    if [ $? -ne 0 ]; then
-        >&2 echo "ERROR: Failed to retrieve db pass"
-        return 1
-    fi
-    echo "postgresql://${user}:${pgAtlasUserPass}@${pgAtlasHostPort}/${pgAtlasDB}"
+  else
+    >&2 echo "ERROR: Database connection string is not defined."
+    return 1
+  fi
 }
+
 
 geo_fixable(){
   expAcc=$1
@@ -100,7 +82,7 @@ exp_meta_info(){
    else
     echo "ERROR: soft file doesn't exist - $expAcc"
   fi
-  
+
   if [[ -s "$GEO_IMPORT_FOLDER/${expAcc}-sdrf.txt" ]]; then
       no_of_replicates=$(cat "$GEO_IMPORT_FOLDER/${expAcc}-sdrf.txt" | cut -d$'\t' -f 1 | tail -n+2 |  uniq -c | awk -F" " '{print $1}' | sort -u | tr "\n" " ")
       factor_value=$(cat "$GEO_IMPORT_FOLDER/${expAcc}-sdrf.txt" | head -n1 | tr "\t" "\n" | grep -P "FactorValue" | awk -F" " '{print $2}' | sed -r 's/(\[|\])//g' | tr "\n" " ")
@@ -123,10 +105,10 @@ atlas_loaded_experiments(){
   type=$2
 
   # experiment that are already loaded
-  if [ "$type" == "bulk" ]; then        
+  if [ "$type" == "bulk" ]; then
       expLoaded=$(echo -e "select accession from experiment where type like 'RNASEQ%';" \
       | psql "$dbConnection" | tail -n +3 | head -n -2 | grep "E-GEOD-" | sed 's/E-GEOD-/GSE/g' | sed 's/^ //g' | sort -u)
-  elif [ "$type" == "singlecell" ]; then 
+  elif [ "$type" == "singlecell" ]; then
       expLoaded=$(echo -e "select accession from experiment where type like 'SINGLE_CELL%';" \
       | psql "$scdbConnection" | tail -n +3 | head -n -2 | grep "E-GEOD-" | sed 's/E-GEOD-/GSE/g' | sed 's/^ //g' | sort -u)
   fi
@@ -152,7 +134,7 @@ pushd "$pathToDownloads"
 
     if [ ! -d "$exp_dir" ]; then
       mkdir -p "$exp_dir"
-    fi  
+    fi
 
     ## while copying preserve time stamps and exlude merged magetab
     rsync -ar --exclude="*.idf.txt" $pathToDownloads/$f/*txt* $exp_dir/
@@ -181,17 +163,17 @@ sync_experiments_folder(){
 
 ## create ArrayExpress accession
   expAcc=$(basename "$expID" | sed 's/_output//g' | sed 's/GSE/E-GEOD-/g')
-  
+
   exp_dir_path="$pathToCuration/$expAcc"
 
   if [ ! -d "exp_dir_path" ]; then
       mkdir -p "$exp_dir_path"
       # sync files
       rsync -ar $pathToDownloads/$expID/*txt* $exp_dir_path/
-      
+
       # rename files with ArrayExpress accession prefix
       rename_magetab_files $exp_dir_path
-  fi    
+  fi
 }
 
 exp_loading_check(){
@@ -201,9 +183,9 @@ exp_loading_check(){
   type=$4
   pathToDownloads=$5
 
-  if [ "$type" == "bulk" ]; then        
+  if [ "$type" == "bulk" ]; then
       count=$(echo "select count(*) from rnaseq_atlas_eligibility where geo_acc='$expAcc';" | psql "$dbConnection" | tail -n +3 | head -n1 | sed 's/ //g')
-  elif [ "$type" == "singlecell" ]; then 
+  elif [ "$type" == "singlecell" ]; then
       count=$(echo "select count(*) from sc_atlas_eligibility where geo_acc='$expAcc';" | psql "$dbConnection" | tail -n +3 | head -n1 | sed 's/ //g')
   fi
 
@@ -226,7 +208,7 @@ load_eligibility_to_db(){
   expAcc=$1
   geoEnaMappingFile=$2
   dbConnection=$3
-  type=$4 
+  type=$4
   pathToDownloads=$5
 
   ena_id=$(get_ena_id "$expAcc" "$geoEnaMappingFile")
@@ -244,11 +226,11 @@ load_eligibility_to_db(){
    exp_type=$(exp_meta_info "$expAcc" "$pathToDownloads" | awk -F'\t' '{print $6}')
 
   if [ $type == "bulk" ]; then
-       echo "Loading $expAcc to rnaseq_atlas_eligibility"    
+       echo "Loading $expAcc to rnaseq_atlas_eligibility"
        echo "insert into rnaseq_atlas_eligibility values (current_timestamp(0),'$atlas_id','$ena_id','$expAcc','$error_code', '$comment','$title','$organism','$no_of_samples','$no_of_replicate','$factor_value',current_timestamp(0),NULL,NULL,'$exp_type');" | psql "$dbConnection"
 
-  elif [ $type == "singlecell" ]; then 
-        echo "Loading $expAcc to sc_atlas_eligibility"    
+  elif [ $type == "singlecell" ]; then
+        echo "Loading $expAcc to sc_atlas_eligibility"
         echo "insert into sc_atlas_eligibility values (current_timestamp(0),'$atlas_id','$ena_id','$expAcc','$error_code','$comment','$title','$organism','$no_of_samples','$no_of_replicate','$factor_value',current_timestamp(0),NULL,NULL,'$exp_type');" | psql "$dbConnection"
   fi
 }

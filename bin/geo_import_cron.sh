@@ -4,20 +4,13 @@
 scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 projectRoot=${scriptDir}/..
 source $projectRoot/bin/geo_import_routines.sh
-# This is resovled via the atlas-bash-utils conda package
-source generic_routines.sh
 
 today="`eval date +%Y-%m-%d`"
 
-USAGE="Usage: `basename $0` [-u pgAtlasUser ] [-d dbIdentifier ] [-t bulkORsinglecell ] [-s supportingFilesPath ] [-o output ]"
+USAGE="Usage: `basename $0` [-t bulkORsinglecell ] [-s supportingFilesPath ] [-o output ]"
     while getopts ":u:d:t:s:o:" params; do
         case $params in
-            u)
-                pgAtlasUser=$OPTARG;
-                ;;
-            d)
-                dbIdentifier=$OPTARG;
-                ;;
+
             t)
                 bulkORsinglecell=$OPTARG;
                 ;;
@@ -51,7 +44,7 @@ if [ ! -d "$supportingFilesPath" ]; then
 fi
 
 # Set up DB connection details
-dbConnection=$(get_db_connection $pgAtlasUser $dbIdentifier)
+dbConnection=$(get_pg_db_connection)
 if [ $? -ne 0 ]; then
     echo "ERROR: dbConnection connection not established" >&2
     exit 1

@@ -4,7 +4,8 @@
 scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 projectRoot=${scriptDir}/..
 source $projectRoot/bin/geo_import_routines.sh
-source $projectRoot/../bash_util/generic_routines.sh
+# This is resovled via the atlas-bash-utils conda package
+source generic_routines.sh
 
 today="`eval date +%Y-%m-%d`"
 
@@ -52,9 +53,9 @@ fi
 # Set up DB connection details
 dbConnection=$(get_db_connection $pgAtlasUser $dbIdentifier)
 if [ $? -ne 0 ]; then
-    echo "ERROR: dbConnection connection not established" >&2    
+    echo "ERROR: dbConnection connection not established" >&2
     exit 1
-fi 
+fi
 
 pushd $supportingFilesPath
     ## Script which retrieves ENA study ids and organsim names for RNA-seq experiments from ENA
@@ -64,9 +65,9 @@ pushd $supportingFilesPath
     ## output of the script list of filtered GSE_ids/ENA_study_id as geo_${bulkORsinglecell}_rnaseq.tsv in desired output path
     $projectRoot/bin/rnaseq_ena_gse_pooling.py --type $bulkORsinglecell --output $supportingFilesPath > ${bulkORsinglecell}_ena_gse_pooling.$today.log
     if [ $? -ne 0 ]; then
-        echo "ERROR: ${bulkORsinglecell}_ena_gse_pooling" >&2    
+        echo "ERROR: ${bulkORsinglecell}_ena_gse_pooling" >&2
         exit 1
-    fi 
+    fi
 
     ## ENA_study_ids list that do no exist in GEO import that will help curators to fetch studies from ENA directly
     makeNotInGEOList() {
@@ -90,7 +91,7 @@ pushd $supportingFilesPath
         type=$(echo $GSEImport | awk -F'_' '{print $2}')
         if [ "$type" == "bulk" ]; then
             GSELoaded=$(echo "select geo_acc from rnaseq_atlas_eligibility;" | psql $dbConnection | tail -n +3 | head -n -2 | sed 's/ //g' | tr '\t' '\n' | sort -u)
-        elif [ "$type" == "singlecell" ]; then 
+        elif [ "$type" == "singlecell" ]; then
             GSELoaded=$(echo "select geo_acc from sc_atlas_eligibility;" | psql $dbConnection | tail -n +3 | head -n -2 | sed 's/ //g' | tr '\t' '\n' | sort -u)
         fi
         comm -23 <(cat $GSEImport | cut -f 1 | sort ) <(echo -e $GSELoaded | tr ' ' '\n' | sort )
@@ -101,10 +102,10 @@ pushd $supportingFilesPath
     ## Download GEO import soft files and convert to MAGE-TAB format (IDF and SDRF)
     bsub -q production-rh74 -cwd `pwd` -M 20000 -R "rusage[mem=20000]" -o ${bulkORsinglecell}_geo_import_$today.out -e ${bulkORsinglecell}_geo_import_$today.err "$projectRoot/bin/import_geo_subs.pl -n -x -f latest_${bulkORsinglecell}_geo_accessions.txt -o $outputPath"
     if [ $? -ne 0 ]; then
-        "ERROR: import_geo_subs.pl LSF submission for $bulkORsinglecell"  >&2  
+        "ERROR: import_geo_subs.pl LSF submission for $bulkORsinglecell"  >&2
         exit 1
-    fi 
-popd    
+    fi
+popd
 
 
-### 
+###

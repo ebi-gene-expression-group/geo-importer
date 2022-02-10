@@ -19,17 +19,17 @@ def parse_RNAseqAPI(api_url):
         response = requests.get(api_url)
         """status code of the response"""
         if response.status_code == 200:
-            print "API response successful"
+            print("API response successful")
             json_data = response.json()
             return (json_data)
         elif response.status_code == 403:
-            print "resource you’re trying to access is forbidden"
+            print("resource you’re trying to access is forbidden")
         elif response.status_code == 404:
-            print "resource you tried to access wasn’t found on the server."
+            print("resource you tried to access wasn’t found on the server.")
         else:
-            print 'Got an error code:', response.status_code
+            print('Got an error code:', response.status_code)
     except requests.exceptions.RequestException as e:
-        print e
+        print(e)
         sys.exit(1)
 
 # Retrieve ENA study ids and organism list
@@ -40,7 +40,7 @@ def fetch_study_ids(response_data):
             sc_studies.append([(ids['STUDY_ID']),ids['ORGANISM']])
         # retrieve all the single cell RNA-seq experiments in ENA.
         df = pd.DataFrame(sc_studies, columns=['study_ids', 'organism'])
-        print "RNA-seq studies in ENA = %d " % (df.study_ids.count())
+        print("RNA-seq studies in ENA = %d " % (df.study_ids.count()))
         return (df)
 
 # For a particular ENA-ID get associated GEO-id using GEO eutilis API
@@ -53,7 +53,7 @@ def fetch_gse_ids(sraid):
     try:
         r = requests.get(url, params=data)
         if 'Error 503' in r.text:
-            print 'eutils gave Error 503. Waiting 20 secs then trying again'
+            print('eutils gave Error 503. Waiting 20 secs then trying again')
             time.sleep(20)
             return fetch_gse_ids(sraid)
         if 'esearchresult' in r.json():
@@ -62,18 +62,18 @@ def fetch_gse_ids(sraid):
                 if len(r_id) == 1:
                     r_id = r_id[0].encode('utf-8')
                     gse_id = "GSE" + str(int(r_id[1:]))
-                    print '%s' % gse_id
+                    print('%s' % gse_id)
                     return gse_id
                 elif len(r_id) == 0:
-                    print 'Not in GEO - %s' % sraid
+                    print('Not in GEO - %s' % sraid)
                 elif len(r_id) == 2:
-                    print '2 GEO ids - %s' % sraid
+                    print('2 GEO ids - %s' % sraid)
             else:
-                print 'idlist missing in json - %s' % sraid
+                print('idlist missing in json - %s' % sraid)
         else:
-             print 'esearchresult missing in json - %s' % sraid
+             print('esearchresult missing in json - %s' % sraid)
     except requests.exceptions.RequestException as e:
-        print e
+        print(e)
 
 # convert it to GEO ids list
 def convert_gse_list(studies):
@@ -117,5 +117,5 @@ if __name__ == "__main__":
     studies = fetch_study_ids(data)
     load_studies = exclude_atlas_loaded(AE2_ENA, studies)
     gse = convert_gse_list(studies)
-    print  "Number of GEO expriments loaded = %d" %(len(gse))
+    print("Number of GEO expriments loaded = %d" %(len(gse)))
     write_dataframe_to_tsv(filename='geo_' + args['type'] + '_rnaseq', object = gse, output=args['output'])

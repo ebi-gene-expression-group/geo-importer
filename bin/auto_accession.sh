@@ -17,8 +17,8 @@ accession_type=$1
 [ ! -z ${SCXA_METADATA_REPO+x} ] || ( echo "SCXA_METADATA_REPO ie. Gitlab repo" && exit 1 )
 
 
-dbConnection=$(get_db_connection atlasprd3 pro)
-scdbConnection=$(get_pg_db_connection -u 'atlasprd3' -d 'pro' -t 'scxa')
+dbConnection=$(get_db_connection)
+scdbConnection=$(get_pg_db_connection)
 
 ## check for loaded studies im DB in bulk and single cell
 max_db_id=$(psql -d "$dbConnection" -a -v TYPE="E-${accession_type}" -f $scriptDir/auto_accession.sql | grep "E-${accession_type}-" | tail -n1 | sed 's/[^0-9]*//g')
@@ -35,11 +35,11 @@ fi
 pushd $meta_clone > /dev/null
 git checkout master && git pull > /dev/null
 popd > /dev/null
-	
+
 ## Ongoing single cell
 max_sc_id=$(find $meta_clone/${accession_type} -type f -name "E-$accession_type-*" -exec basename {} ';' | sed 's/[^0-9]*//g' | sort -nr | head -n1)
 
-## ongoing curation 
+## ongoing curation
 if [ $accession_type == 'CURD' ]; then
 	max_curation=$(find $AE2_BASE_DIR/${accession_type} -type d -exec basename {} ';' |  sed 's/[^0-9]*//g' | sort -nr | head -n1)
 elif [ $accession_type == 'ENAD' ]; then

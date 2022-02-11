@@ -42,8 +42,8 @@ Perl dependencies:
 
 Python dependencies:
 - Python (3.8)
-- pandas (4.1.0)
-- requests
+- pandas (1.4.0)
+- requests (2.27.1)
 
 
 ENV variables:

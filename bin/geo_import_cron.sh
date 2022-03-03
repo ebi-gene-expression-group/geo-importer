@@ -98,14 +98,6 @@ pushd $supportingFilesPath
     ## filter GSE ids that have already been imported in the atlas eligibility database
     filterGEOImport $dbConnection geo_${bulkORsinglecell}_rnaseq.tsv > latest_${bulkORsinglecell}_geo_accessions.txt
 
-    ## Download GEO import soft files and convert to MAGE-TAB format (IDF and SDRF)
-    atlas-lsf -q ${ATLAS_PROD_LSF_DEFAULT_QUEUE} -m 20000 -l ${bulkORsinglecell}_geo_import_$today \
-    -c "$projectRoot/bin/import_geo_subs.pl -n -x -f latest_${bulkORsinglecell}_geo_accessions.txt -o $outputPath"
-    if [ $? -ne 0 ]; then
-        "ERROR: import_geo_subs.pl LSF submission for $bulkORsinglecell"  >&2
-        exit 1
-    fi
 popd
 
 
-###

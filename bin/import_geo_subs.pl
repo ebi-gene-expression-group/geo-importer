@@ -22,7 +22,7 @@ use File::Copy;
 use File::Path;
 use Getopt::Long;
 use LWP::Simple qw($ua getstore is_success is_error);
-use IO::CaptureOutput qw(capture);
+use Capture::Tiny qw(capture);
 
 use EBI::FGPT::Resource::Database;
 use EBI::FGPT::Config qw($CONFIG);
@@ -229,11 +229,9 @@ while ( my $line = <$list_fh> )
 			. $data_dir . " -x " . " -e " );
 	}
 
-	my ( $stdout, $stderr, $rc );
-	capture sub {
-		$rc = system($command );
-	  } => \$stdout,
-	  \$stderr;
+	my ( $stdout, $stderr, $rc ) = capture sub {
+		system( $command );
+	};
 
 	# Make AE accession string
 	my $ae_acc = $accn;

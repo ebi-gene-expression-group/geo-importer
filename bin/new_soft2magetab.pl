@@ -15,7 +15,6 @@ use warnings;
 
 use EBI::FGPT::Converter::GEO::SOFTtoMAGETAB;
 use EBI::FGPT::Config qw($CONFIG);
-use EBI::FGPT::FuzzyRecogniser;
 use Getopt::Long;
 use File::Spec;
 use Bio::MAGETAB::TermSource;
@@ -87,6 +86,7 @@ if ($skip_data) {
 my $converter;
 
 if ( $efo_mapping ) {
+	require EBI::FGPT::FuzzyRecogniser;
 
     my ( $term_mapper, $term_source );
 

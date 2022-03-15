@@ -30,24 +30,24 @@ USAGE="Usage: `basename $0` [-t bulkORsinglecell ] [-s supportingFilesPath ] [-o
 
 if ! [[ "$bulkORsinglecell" =~ ^(bulk|singlecell)$ ]]; then
     echo "please provide type -t as 'bulk' or 'singlecell'"
-   exit 1;
+   exit 1
 fi
 
 if [ ! -d "$outputPath" ]; then
     echo " output path $outputPath doesn't exist"
-    exit 1;
+    exit 1
 fi
 
 if [ ! -d "$supportingFilesPath" ]; then
     echo "supporting file $supportingFilesPath path doesn't exist"
-    exit 1;
+    exit 1
 fi
 
 # Set up DB connection details
 dbConnection=$(get_pg_db_connection)
 if [ $? -ne 0 ]; then
     echo "ERROR: dbConnection connection not established" >&2
-    exit 1;
+    exit 1
 fi
 
 

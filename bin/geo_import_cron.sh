@@ -30,17 +30,17 @@ USAGE="Usage: `basename $0` [-t bulkORsinglecell ] [-s supportingFilesPath ] [-o
 
 if ! [[ "$bulkORsinglecell" =~ ^(bulk|singlecell)$ ]]; then
     echo "please provide type -t as 'bulk' or 'singlecell'"
-   exit 1;
+   exit 1
 fi
 
 if [ ! -d "$outputPath" ]; then
     echo " output path $outputPath doesn't exist"
-    exit 1;
+    exit 1
 fi
 
 if [ ! -d "$supportingFilesPath" ]; then
     echo "supporting file $supportingFilesPath path doesn't exist"
-    exit 1;
+    exit 1
 fi
 
 # Set up DB connection details
@@ -49,6 +49,7 @@ if [ $? -ne 0 ]; then
     echo "ERROR: dbConnection connection not established" >&2
     exit 1
 fi
+
 
 pushd $supportingFilesPath
     ## Script which retrieves ENA study ids and organsim names for RNA-seq experiments from ENA
@@ -92,13 +93,6 @@ pushd $supportingFilesPath
     ## filter GSE ids that have already been imported in the atlas eligibility database
     filterGEOImport $dbConnection geo_${bulkORsinglecell}_rnaseq.tsv > latest_${bulkORsinglecell}_geo_accessions.txt
 
-    ## Download GEO import soft files and convert to MAGE-TAB format (IDF and SDRF)
-    bsub -q production-rh74 -cwd `pwd` -M 20000 -R "rusage[mem=20000]" -o ${bulkORsinglecell}_geo_import_$today.out -e ${bulkORsinglecell}_geo_import_$today.err "$projectRoot/bin/import_geo_subs.pl -n -x -f latest_${bulkORsinglecell}_geo_accessions.txt -o $outputPath"
-    if [ $? -ne 0 ]; then
-        "ERROR: import_geo_subs.pl LSF submission for $bulkORsinglecell"  >&2
-        exit 1
-    fi
 popd
 
 
-###

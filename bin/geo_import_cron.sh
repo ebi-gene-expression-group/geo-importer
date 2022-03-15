@@ -50,11 +50,6 @@ if [ $? -ne 0 ]; then
     exit 1;
 fi
 
-# Get queue for LSF submission
-if [ -z $ATLAS_PROD_LSF_DEFAULT_QUEUE ]; then
-    echo "ERROR: ATLAS_PROD_LSF_DEFAULT_QUEUE env variable is not defined"
-    exit 1;
-fi
 
 pushd $supportingFilesPath
     ## Script which retrieves ENA study ids and organsim names for RNA-seq experiments from ENA

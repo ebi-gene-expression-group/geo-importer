@@ -67,12 +67,12 @@ if ($help) {
 
 # Initialize Logger
 my $log_conf = q(
-   log4perl.category.SOFT              = INFO, LOG1
-   log4perl.appender.LOG1           = Log::Log4perl::Appender::File
-   log4perl.appender.LOG1.filename  = sub { return get_log_fn(); }
-   log4perl.appender.LOG1.mode      = clobber
-   log4perl.appender.LOG1.layout    = Log::Log4perl::Layout::PatternLayout
-   log4perl.appender.LOG1.layout.ConversionPattern = %d %p %m %n
+	log4perl.category.SOFT              = INFO, LOG1
+	log4perl.appender.LOG1           = Log::Log4perl::Appender::File
+	log4perl.appender.LOG1.filename  = sub { return get_log_fn(); }
+	log4perl.appender.LOG1.mode      = clobber
+	log4perl.appender.LOG1.layout    = Log::Log4perl::Layout::PatternLayout
+	log4perl.appender.LOG1.layout.ConversionPattern = %d %p %m %n
 );
 Log::Log4perl::init( \$log_conf );
 
@@ -86,11 +86,11 @@ if ($skip_data) {
 my $converter;
 
 if ( $efo_mapping ) {
+
 	require EBI::FGPT::FuzzyRecogniser;
 
     my ( $term_mapper, $term_source );
-
-     my $efo = $CONFIG->get_EFO_OWL_FILE;
+	my $efo = $CONFIG->get_EFO_OWL_FILE;
 
 	# Make the term mapper and term source objet
     $term_mapper = EBI::FGPT::FuzzyRecogniser->new( owlfile => $efo );
@@ -101,32 +101,34 @@ if ( $efo_mapping ) {
 		}
 	);
 
- $converter = EBI::FGPT::Converter::GEO::SOFTtoMAGETAB->new(
-	{
-		soft_path     => $soft,
-		acc           => $gse_acc,
-		target_dir    => $target,
-		data_dir      => $data,
-		gse_gds_file  => $CONFIG->get_GSE_GDS_MAP,
-		gpl_acc_file  => $CONFIG->get_GEO_PLATFORM_MAP,
-		skip_download => $skip_data,
-		ena_acc_file  => $CONFIG->get_ENA_ACC_MAP,
-        term_mapper   => $term_mapper,
-        term_source   => $term_source
-	}
-);
-} else {
-      $converter = EBI::FGPT::Converter::GEO::SOFTtoMAGETAB->new(
-    	{
-        	soft_path     => $soft,
-        	acc           => $gse_acc,
-        	target_dir    => $target,
-        	data_dir      => $data,
-        	gse_gds_file  => $CONFIG->get_GSE_GDS_MAP,
-        	gpl_acc_file  => $CONFIG->get_GEO_PLATFORM_MAP,
-        	skip_download => $skip_data,
-        	ena_acc_file  => $CONFIG->get_ENA_ACC_MAP
-    	}
+	$converter = EBI::FGPT::Converter::GEO::SOFTtoMAGETAB->new(
+		{
+			soft_path     => $soft,
+			acc           => $gse_acc,
+			target_dir    => $target,
+			data_dir      => $data,
+			gse_gds_file  => $CONFIG->get_GSE_GDS_MAP,
+			gpl_acc_file  => $CONFIG->get_GEO_PLATFORM_MAP,
+			skip_download => $skip_data,
+			ena_acc_file  => $CONFIG->get_ENA_ACC_MAP,
+			term_mapper   => $term_mapper,
+			term_source   => $term_source
+		}
+	);
+}
+
+else {
+	$converter = EBI::FGPT::Converter::GEO::SOFTtoMAGETAB->new(
+		{
+			soft_path     => $soft,
+			acc           => $gse_acc,
+			target_dir    => $target,
+			data_dir      => $data,
+			gse_gds_file  => $CONFIG->get_GSE_GDS_MAP,
+			gpl_acc_file  => $CONFIG->get_GEO_PLATFORM_MAP,
+			skip_download => $skip_data,
+			ena_acc_file  => $CONFIG->get_ENA_ACC_MAP
+		}
 	);
 }
 
@@ -140,17 +142,16 @@ $converter->write_magetab("merged");
 
 # Nasty hack to change date formats for release date
 my $idf_path = File::Spec->catfile( $target, $converter->get_acc . ".merged.idf.txt" );
-my @args =
-  ( 'perl', '-i', '-pe', 's/([\d]{4}-[\d]{2}-[\d]{2})T.*/$1/g', $idf_path );
+my @args = ( 'perl', '-i', '-pe', 's/([\d]{4}-[\d]{2}-[\d]{2})T.*/$1/g', $idf_path );
 $logger->info("Fixing date format in IDF: @args");
 system(@args) == 0
-  or $logger->error("Could not fix date formats in IDF");
+	or $logger->error("Could not fix date formats in IDF");
 
 # This is required to remove any quotes around values in IDF-
 # no idea where these quotes come from
 # suspect its a windows thing
 system( 'perl', '-i', '-pe', 's/"//g', $idf_path ) == 0
-  or $logger->warn("Could not remove quotes within IDF");
+	or $logger->warn("Could not remove quotes within IDF");
 
 ## Tidy up SDRF
 my @sdrf_type = ( ".hyb.sdrf.txt", ".assay.sdrf.txt", ".seq.sdrf.txt" );
@@ -163,29 +164,29 @@ foreach my $sdrf_type (@sdrf_type) {
 
 		#This is required to remove any quotes around values
 		system( 'perl', '-i', '-pe', 's/"//g', $sdrf_path ) == 0
-		  or $logger->warn("Could not remove quotes within sdrf");
+			or $logger->warn("Could not remove quotes within sdrf");
 
 		system( 'perl', '-i', '-pe', 's/file://g', $sdrf_path ) == 0
-		  or $logger->warn("Could not remove file: prefix from file names in SDRF");
+			or $logger->warn("Could not remove file: prefix from file names in SDRF");
 
 		my @sdrf_args = (
-        "$abs_path/sdrf_protocol_correct.pl",
-			, '-i', $idf_path, '-s', $sdrf_path
+			"$abs_path/sdrf_protocol_correct.pl",
+				, '-i', $idf_path, '-s', $sdrf_path
 		);
 		$logger->info("Running sdrf_protocol_correct over SDRF: @sdrf_args");
 
 		system(@sdrf_args) == 0
-		  or $logger->logwarn("Running sdrf_col_correct.pl");
+			or $logger->logwarn("Running sdrf_col_correct.pl");
 
 		#Remove consecutive 'Term Source REF' columns
 		@sdrf_args = (
-       "$abs_path/sdrf_termsource_correct.pl",
-			'-s', $sdrf_path
+			"$abs_path/sdrf_termsource_correct.pl",
+				'-s', $sdrf_path
 		);
 		$logger->info("Running sdrf_termsource_correct over SDRF: @sdrf_args");
 
 		system(@sdrf_args) == 0
-		  or $logger->logwarn("Running sdrf_termsource_correct.pl");
+			or $logger->logwarn("Running sdrf_termsource_correct.pl");
 
 	}
 

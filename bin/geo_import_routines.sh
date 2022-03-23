@@ -38,7 +38,7 @@ get_pg_db_connection(){
   if [ ! -z  ${dbConnection} ]; then
     # Check that it looks like a Postresql connection
     # Expected format "postgresql://${user}:${pgAtlasUserPass}@${pgAtlasHostPort}/${pgAtlasDB}"
-    if [[ $dbConnection =~ ^postgresql:\/\/.+:.+@.+:.+:.+$ ]]; then
+    if [[ $dbConnection =~ ^postgresql:\/\/.+:.+@.+:.+\/.+$ ]]; then
         echo $dbConnection
     else
       >&2 echo "ERROR: DB connection string doesn't look like a database connection."

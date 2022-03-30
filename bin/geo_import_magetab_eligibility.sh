@@ -76,32 +76,32 @@ fi
 # This section looks at each experiment within GEOImportDownloads folder
 # Splits merged MGAE-TAB to IDF and SDRF
 # Validates mage-tab and exports report
-# Perfroms Atlas elgibility check
-# Performs experiemnt loading check, and loads pheno-data info into database for each new experiment.
-# This is useful for curators to pririoritise studies.
+# Performs Atlas elgibility check
+# Performs experiment loading check, and loads pheno-data info into database for each new experiment.
+# This is useful for curators to prioritise studies.
 find ${pathToDownloads} -mindepth 1 -maxdepth 1 | xargs -n1 basename \
- | while read -r exp ; do
+    | while read -r exp ; do
     echo $exp
     expAcc=$(echo -e $exp | sed 's/_output//g')
     pushd $pathToDownloads/$exp/
 
-     if [[ -e "${expAcc}.merged.idf.txt" ]]; then
-          echo "splitting MAGE-TAB - $expAcc"
-		      $projectRoot/../curation/split_magetab.pl ${expAcc}.merged.idf.txt
+    if [[ -e "${expAcc}.merged.idf.txt" ]]; then
+        echo "splitting MAGE-TAB - $expAcc"
+		    split_magetab.pl ${expAcc}.merged.idf.txt
             if  [ ! -s ${expAcc}_atlas_eligibility.out ]; then
-           		     echo "validating MAGE-TAB - $expAcc"
-           		     $projectRoot/../curation/validate_magetab.pl -m ${expAcc}.idf.txt > ${expAcc}_validate_magetab.out
+                echo "validating MAGE-TAB - $expAcc"
+                validate_magetab.pl -m ${expAcc}.merged.idf.txt > ${expAcc}_validate_magetab.out
 
-           		     echo "Atlas eligility check - $expAcc"
-           		     $projectRoot/../curation/check_atlas_eligibility.pl -m ${expAcc}.idf.txt > ${expAcc}_atlas_eligibility.out
+                echo "Atlas eligility check - $expAcc"
+                check_atlas_eligibility.pl -m ${expAcc}.merged.idf.txt > ${expAcc}_atlas_eligibility.out
 
-        		       echo "Loading in the database - $expAcc"
-           		     exp_loading_check $expAcc $geoEnaMappingFile $dbConnection $bulkORsinglecell $pathToDownloads
-	          else
-			             echo "${expAcc}_atlas_eligibility done"
-           		     exp_loading_check $expAcc $geoEnaMappingFile $dbConnection $bulkORsinglecell $pathToDownloads
-                   echo "Loaded in the database - $expAcc"
-        	  fi
+                echo "Loading in the database - $expAcc"
+                exp_loading_check $expAcc $geoEnaMappingFile $dbConnection $bulkORsinglecell $pathToDownloads
+	        else
+                echo "${expAcc}_atlas_eligibility already done"
+                exp_loading_check $expAcc $geoEnaMappingFile $dbConnection $bulkORsinglecell $pathToDownloads
+                echo "Loaded in the database - $expAcc"
+            fi
       else
 	      echo "MAGE-TAB files for $expAcc missing"
       fi
@@ -110,6 +110,6 @@ find ${pathToDownloads} -mindepth 1 -maxdepth 1 | xargs -n1 basename \
 done
 
 
-## create atlas accession folders (E-GEOD-xxx) under associated bulk or singlecel RNA-seq and sync all mage-tab files for curation
+## create atlas accession folders (E-GEOD-xxx) under associated bulk or singlecell RNA-seq and sync all mage-tab files for curation
 echo "Creating folders and moving files for new studies"
 move_files $pathToDownloads $pathToCuration

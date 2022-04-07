@@ -95,16 +95,20 @@ find ${pathToDownloads} -mindepth 1 -maxdepth 1 | xargs -n1 basename \
                 echo "Atlas eligility check - $expAcc"
                 check_atlas_eligibility.pl -m ${expAcc}.merged.idf.txt > ${expAcc}_atlas_eligibility.out
 
+                echo "Creating Atlas MAGE-TAB files - $expAcc"
+                create_atlas_accession_files $expAcc $bulkORsinglecell
+
                 echo "Loading in the database - $expAcc"
                 exp_loading_check $expAcc $geoEnaMappingFile $dbConnection $bulkORsinglecell $pathToDownloads
+
 	        else
                 echo "${expAcc}_atlas_eligibility already done"
                 exp_loading_check $expAcc $geoEnaMappingFile $dbConnection $bulkORsinglecell $pathToDownloads
                 echo "Loaded in the database - $expAcc"
             fi
-      else
+    else
 	      echo "MAGE-TAB files for $expAcc missing"
-      fi
+    fi
 
     popd
 done

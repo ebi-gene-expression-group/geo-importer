@@ -60,10 +60,10 @@ if [ ! -d "$pathToDownloads" ]; then
     exit 1;
 fi
 
-if [ ! -d "$pathToCuration" ]; then
-    echo "path to curation $pathToCuration doesn't exist"
-    exit 1;
-fi
+#if [ ! -d "$pathToCuration" ]; then
+#    echo "path to curation $pathToCuration doesn't exist"
+#    exit 1;
+#fi
 
 # Set up DB connection details
 dbConnection=$(get_pg_db_connection)
@@ -114,6 +114,6 @@ find ${pathToDownloads} -mindepth 1 -maxdepth 1 | xargs -n1 basename \
 done
 
 
-## create atlas accession folders (E-GEOD-xxx) under associated bulk or singlecell RNA-seq and sync all mage-tab files for curation
-echo "Creating folders and moving files for new studies"
-move_files $pathToDownloads $pathToCuration
+### create atlas accession folders (E-GEOD-xxx) under associated bulk or singlecell RNA-seq and sync all mage-tab files for curation
+#echo "Creating folders and moving files for new studies"
+#move_files $pathToDownloads $pathToCuration

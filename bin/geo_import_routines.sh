@@ -115,61 +115,61 @@ atlas_loaded_experiments(){
   echo -e "$expLoaded\n$inAtlas" | sed 's/ //g'
 }
 
-# function to create experiment accession directory and move all processed files to GEOD
-move_files(){
-  pathToDownloads=$1
-  pathToCuration=$2
-
-  pushd "$pathToDownloads"
-  for f in *; do
-    expAcc=$(basename "$f" | sed 's/_output//g' | sed 's/GSE/E-GEOD-/g')
-
-    echo "making directory $expAcc"
-    exp_dir="$pathToCuration/$expAcc"
-
-    if [ ! -d "$exp_dir" ]; then
-      mkdir -p "$exp_dir"
-    fi
-
-    ## while copying preserve time stamps and exlude merged magetab
-    rsync -ar --exclude="*.idf.txt" $pathToDownloads/$f/*txt* $exp_dir/
-
-    # rename files with ArrayExpress accession prefix
-    rename_magetab_files $exp_dir
-  done
-  popd
-}
-
-rename_magetab_files(){
-  pathToMagetabDir=$1
-
-  pushd "$pathToMagetabDir"
-  ## rename all files in the folder
-  for filename in *.txt*; do
-    mv "$filename" "$(echo "$filename" | sed 's/GSE/E-GEOD-/g')";
-  done
-  popd
-}
-
-sync_experiments_folder(){
-  expID=$1
-  pathToDownloads=$2
-  pathToCuration=$3
-
-  ## create ArrayExpress accession
-  expAcc=$(basename "$expID" | sed 's/_output//g' | sed 's/GSE/E-GEOD-/g')
-
-  exp_dir_path="$pathToCuration/$expAcc"
-
-  if [ ! -d "exp_dir_path" ]; then
-    mkdir -p "$exp_dir_path"
-    # sync files
-    rsync -ar $pathToDownloads/$expID/*txt* $exp_dir_path/
-
-    # rename files with ArrayExpress accession prefix
-    rename_magetab_files $exp_dir_path
-  fi
-}
+## function to create experiment accession directory and move all processed files to GEOD
+#move_files(){
+#  pathToDownloads=$1
+#  pathToCuration=$2
+#
+#  pushd "$pathToDownloads"
+#  for f in *; do
+#    expAcc=$(basename "$f" | sed 's/_output//g' | sed 's/GSE/E-GEOD-/g')
+#
+#    echo "making directory $expAcc"
+#    exp_dir="$pathToCuration/$expAcc"
+#
+#    if [ ! -d "$exp_dir" ]; then
+#      mkdir -p "$exp_dir"
+#    fi
+#
+#    ## while copying preserve time stamps and exlude merged magetab
+#    rsync -ar --exclude="*.idf.txt" $pathToDownloads/$f/*txt* $exp_dir/
+#
+#    # rename files with ArrayExpress accession prefix
+#    rename_magetab_files $exp_dir
+#  done
+#  popd
+#}
+#
+#rename_magetab_files(){
+#  pathToMagetabDir=$1
+#
+#  pushd "$pathToMagetabDir"
+#  ## rename all files in the folder
+#  for filename in *.txt*; do
+#    mv "$filename" "$(echo "$filename" | sed 's/GSE/E-GEOD-/g')";
+#  done
+#  popd
+#}
+#
+#sync_experiments_folder(){
+#  expID=$1
+#  pathToDownloads=$2
+#  pathToCuration=$3
+#
+#  ## create ArrayExpress accession
+#  expAcc=$(basename "$expID" | sed 's/_output//g' | sed 's/GSE/E-GEOD-/g')
+#
+#  exp_dir_path="$pathToCuration/$expAcc"
+#
+#  if [ ! -d "exp_dir_path" ]; then
+#    mkdir -p "$exp_dir_path"
+#    # sync files
+#    rsync -ar $pathToDownloads/$expID/*txt* $exp_dir_path/
+#
+#    # rename files with ArrayExpress accession prefix
+#    rename_magetab_files $exp_dir_path
+#  fi
+#}
 
 
 # Rename the final MAGE-TAB files to their accession and do some helpful modification for curators

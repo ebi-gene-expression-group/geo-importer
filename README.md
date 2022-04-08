@@ -37,3 +37,10 @@ For microarrays, the -x should not be used as we need to download raw (.cel/txt)
 A python script `rnaseq_ena_gse_pooling.py` is used to retrieve ENA study ids and convert to GEO based GSE ids. This script depends on RNA-seqer API, which is used to retrieve ENA study ids and organism names from ENA (http://www.ebi.ac.uk/fg/rnaseq/api/json/getBulkRNASeqStudiesInSRA). GEO studies that have been previously downloaded in ArrayExpress (AE2) are filtered, so there are no redundant downloads. NCBI eutilis (http://eutils.ncbi.nlm.nih.gov/entrez/eutils) is used for converting filtered ENA study id to GSE id. The output list of converted GSE ids are stored as `geo_rnaseq.tsv` under `geo_import_supporting_files`. ENA ids that do not have meta-data in GEO are recorded in `NotInGEO_list.txt` that has ENA study id and associated organism name which may be useful for curators to prioritise for ENA import.
 
 The `geo_import_cron.sh` script encapsulates this process and goes on to filter the GSExx ids (`geo_rnaseq.tsv`) list further to remove GSE ids that already exist in the `atlas_eligibility` table in the atlasprd3 database. The process produces a latest GEO accessions list `latest_geo_accessions.txt` ready to run batch GEO import.
+
+After the batch import is run, the `geo_import_magetab_eligibility.sh` script crawls the Downloads directory and runs 
+1) MAGE-TAB split into IDF/SDRF, 
+2) Atlas eligibility check,
+3) recording of the dataset in the database. 
+
+The optional parameter `-c` can be used to specify a "curation directory" where to copy the generated MAGE-TAB files. 

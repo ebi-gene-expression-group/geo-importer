@@ -171,6 +171,37 @@ sync_experiments_folder(){
   fi
 }
 
+
+# Rename the final MAGE-TAB files to their accession and do some helpful modification for curators
+create_atlas_accession_files(){
+    expAcc=$1
+    bulkORsinglecell=$2
+
+    # In the folder with the raw imported/split MAGE-TAB files
+    if [[ -e "${expAcc}-idf.txt" ]]; then
+        atlas_id=$(echo -e "$expAcc" | sed 's/GSE/E-GEOD-/g')
+        # Remove ArrayExpressSubmissionDate comment and rename accession comment in IDF
+        grep -v "ArrayExpressSubmissionDate" "${expAcc}-idf.txt" | \
+        sed 's/ArrayExpressAccession/ExpressionAtlasAccession/g' > "${atlas_id}-idf.txt"
+        # Add SDRF File ref to IDF
+        echo -e "SDRF File\t${atlas_id}-sdrf.txt" >> "${atlas_id}-idf.txt"
+        # Update BioSample accession comment in the SDRF
+        sed -e 's/Comment \[BIOSAMPLE\]/Comment [BioSD_SAMPLE]/' "${expAcc}-sdrf.txt" > "${atlas_id}-sdrf.txt"
+
+        # Extra modifications for single cell experiments
+        if [[ "$bulkORsinglecell" =~ "singlecell" ]]; then
+            # Change experiment type
+            sed -i "" -e 's/\tRNA-seq of coding RNA/\tRNA-seq of coding RNA from single cells/' "${atlas_id}-idf.txt"
+            # Add single cell IDF comments to be filled by curators
+            echo -e "Comment[EACurator]\nComment[EAExpectedClusters]\nComment[EAExperimentType]\nComment[EAAdditionalAttributes]" >> "${atlas_id}-idf.txt"
+        fi
+
+    else
+        echo "Could not find split MAGE-TAB files for ${expAcc}"
+    fi
+}
+
+
 exp_loading_check(){
   expAcc=$1
   geoEnaMappingFile=$2

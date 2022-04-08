@@ -185,8 +185,8 @@ create_atlas_accession_files(){
         sed 's/ArrayExpressAccession/ExpressionAtlasAccession/g' > "${atlas_id}-idf.txt"
         # Add SDRF File ref to IDF
         echo -e "SDRF File\t${atlas_id}-sdrf.txt" >> "${atlas_id}-idf.txt"
-        # Create the SDRF
-        cp "${expAcc}-sdrf.txt" "${atlas_id}-sdrf.txt"
+        # Update BioSample accession comment in the SDRF
+        sed -e 's/Comment \[BIOSAMPLE\]/Comment [BioSD_SAMPLE]/' "${expAcc}-sdrf.txt" > "${atlas_id}-sdrf.txt"
 
         # Extra modifications for single cell experiments
         if [[ "$bulkORsinglecell" =~ "singlecell" ]]; then

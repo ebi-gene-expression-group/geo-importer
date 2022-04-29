@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Script to generate a list of GEO brokered ENA transcriptomics studies that have raw data"""
 
 import argparse
@@ -6,6 +7,7 @@ import re
 from os import path, environ
 from sys import exit
 
+import numpy as np
 import pandas as pd
 import requests
 import xmltodict
@@ -24,18 +26,16 @@ sc_regex = re.compile("single[ _-]cell|cell-to-cell|scRNA|10x|single[ _-]nucleus
 
 def is_singlecell(title):
     """Determine single cell experiments based on title"""
-    if title:
-        if sc_regex.search(title):
-            return True
-    return False
+    return bool(title) and bool(sc_regex.search(title))
 
 
-def get_geo_study_list(bulk_or_singlecell, limit=100, library_source="TRANSCRIPTOMIC"):
+def get_geo_study_list(bulk_or_singlecell, limit=100000, library_source="TRANSCRIPTOMIC"):
     """Fetch list of GEO-brokered transcriptomics studies via ENA API
     and parse study XML to read title and organism.
     Returns a Pandas data frame for the given type (bulk or single cell)."""
 
     # Check for env variable to overwrite URL
+    # e.g. ENA_GEO_QUERY_URL=https://www.ebi.ac.uk/ena/browser/api/xml/search?result=read_study&query=library_source%3D%22TRANSCRIPTOMIC%22+AND+center_name%3D%22GEO%22&limit=100
     ena_url = environ.get("ENA_GEO_QUERY_URL")
     if ena_url:
         u = requests.get(ena_url)
@@ -108,7 +108,15 @@ if __name__ == "__main__":
         print("Output path does not exist.")
         exit(1)
 
-    output_file = path.join(args.output, "geo_{}_rnaseq.tsv".format(args.type))
     study_table = get_geo_study_list(args.type)
-    # This contains the full table, need to trim it to GEO/SRA accession only to match expected output for pipeline
+    # Remove other columns for compatibility with further workflow
+    try:
+        study_table = study_table[["geo", "study"]]
+    except KeyError:
+        study_table = pd.DataFrame()
+    # Filter invalid entries with multiple or no accessions (these are mostly GEO superseries)
+    study_table.replace("", np.nan, inplace=True)
+    study_table.dropna(axis='index', how='any', inplace=True)
+    # The name of the output file is important for the rest of the pipeline
+    output_file = path.join(args.output, "geo_{}_rnaseq.tsv".format(args.type))
     study_table.to_csv(output_file, sep='\t', index=False, header=False)

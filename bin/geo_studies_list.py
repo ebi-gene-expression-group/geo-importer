@@ -3,7 +3,7 @@
 import argparse
 import json
 import re
-from os import path
+from os import path, environ
 from sys import exit
 
 import pandas as pd
@@ -30,17 +30,26 @@ def is_singlecell(title):
     return False
 
 
-def get_geo_study_list(bulk_or_singlecell):
+def get_geo_study_list(bulk_or_singlecell, limit=100, library_source="TRANSCRIPTOMIC"):
     """Fetch list of GEO-brokered transcriptomics studies via ENA API
     and parse study XML to read title and organism.
     Returns a Pandas data frame for the given type (bulk or single cell)."""
 
-    limit = "100000"
-    library_source = "TRANSCRIPTOMIC"
+    # Check for env variable to overwrite URL
+    ena_url = environ.get("ENA_GEO_QUERY_URL")
+    if ena_url:
+        u = requests.get(ena_url)
 
-    ena_query = f"https://www.ebi.ac.uk/ena/browser/api/xml/search?result=read_study&query=library_source%3D%22{library_source}%22%20AND%20center_name%3D%22GEO%22&limit={limit}&gzip=false&dataPortal=ena&includeMetagenomes=false"
+    else:
+        base_url = "https://www.ebi.ac.uk/ena/browser/api/xml/search?"
+        params = {"result": "read_study",
+                  "query": f"library_source=\"{library_source}\" AND center_name=\"GEO\"",
+                  "limit": str(limit),
+                  "gzip": "false",
+                  "dataPortal": "ena"
+                  }
+        u = requests.get(base_url, params=params)
 
-    u = requests.get(ena_query)
     raw_xml = u.text
     xml_dict = xmltodict.parse(raw_xml)
 

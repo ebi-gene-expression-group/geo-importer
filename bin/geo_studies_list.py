@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import logging
 import re
 from os import path, environ
 from sys import exit
@@ -16,7 +17,9 @@ import xmltodict
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--type', help='Please provide type as "bulk" or "singlecell"', required=True)
-    parser.add_argument('-o', '--output', help='Please provide absolute path to output directory"', required=True)
+    parser.add_argument('-o', '--output', help='Please provide absolute path to output directory', required=True)
+    parser.add_argument('-v', '--verbose', action="store_const", const=10, default=20,
+                        help="Print more detailed logging", )
     return parser.parse_args()
 
 
@@ -29,13 +32,13 @@ def is_singlecell(title):
     return bool(title) and bool(sc_regex.search(title))
 
 
-def get_geo_study_list(bulk_or_singlecell, limit=100000, library_source="TRANSCRIPTOMIC"):
+def get_geo_study_list(logger, bulk_or_singlecell, limit=100000, library_source="TRANSCRIPTOMIC"):
     """Fetch list of GEO-brokered transcriptomics studies via ENA API
     and parse study XML to read title and organism.
     Returns a Pandas data frame for the given type (bulk or single cell)."""
 
     # Check for env variable to overwrite URL
-    # e.g. ENA_GEO_QUERY_URL=https://www.ebi.ac.uk/ena/browser/api/xml/search?result=read_study&query=library_source%3D%22TRANSCRIPTOMIC%22+AND+center_name%3D%22GEO%22&limit=100
+    # e.g. ENA_GEO_QUERY_URL='https://www.ebi.ac.uk/ena/browser/api/xml/search?result=read_study&query=library_source%3D%22TRANSCRIPTOMIC%22+AND+center_name%3D%22GEO%22&limit=100'
     ena_url = environ.get("ENA_GEO_QUERY_URL")
     if ena_url:
         u = requests.get(ena_url)
@@ -50,11 +53,14 @@ def get_geo_study_list(bulk_or_singlecell, limit=100000, library_source="TRANSCR
                   }
         u = requests.get(base_url, params=params)
 
+    logging.debug(u.url)
     raw_xml = u.text
     xml_dict = xmltodict.parse(raw_xml)
 
     bulk_studies = []
     singlecell_studies = []
+
+    logger.debug("Start parsing results")
 
     for project in xml_dict.get("PROJECT_SET", {}).get("PROJECT"):
         study = {}
@@ -63,10 +69,6 @@ def get_geo_study_list(bulk_or_singlecell, limit=100000, library_source="TRANSCR
         study["project"] = ids.get("PRIMARY_ID")
         study["study"] = ids.get("SECONDARY_ID")
         study["geo"] = ids.get("EXTERNAL_ID", {}).get("#text", "")
-
-        # For some studies the ENA study accession is missing, let's look it up
-        if study["geo"] and not study["study"]:
-            study["study"] = lookup_sra_study(study["geo"])
 
         study["title"] = project.get("TITLE", "")
         study["taxonomy"] = project.get("SUBMISSION_PROJECT", {}).get("ORGANISM", {}).get("SCIENTIFIC_NAME", "")
@@ -89,12 +91,14 @@ def lookup_sra_study(geo_accession):
     if it is not found in the study XML"""
 
     ebi_query = f"https://www.ebi.ac.uk/ebisearch/ws/rest/nucleotideSequences?query={geo_accession}&format=json"
-
+    logging.debug(ebi_query)
     u = requests.get(ebi_query)
     result = json.loads(u.text)
     for entry in result.get("entries", []):
         if entry.get("source", "") == "sra-study":
-            return entry.get("id", "")
+            ena_study = entry.get("id", "")
+            logging.info(f"Found ENA study accession for {geo_accession}: {ena_study}")
+            return ena_study
 
 
 if __name__ == "__main__":
@@ -108,15 +112,29 @@ if __name__ == "__main__":
         print("Output path does not exist.")
         exit(1)
 
-    study_table = get_geo_study_list(args.type)
+    logger = logging.getLogger()
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=args.verbose)
+
+    logging.info("Retrieving GEO study list from ENA.")
+    study_table = get_geo_study_list(logger, args.type)
+
     # Remove other columns for compatibility with further workflow
     try:
         study_table = study_table[["geo", "study"]]
     except KeyError:
         study_table = pd.DataFrame()
+
+    logging.debug(f"Found {len(study_table)} raw {args.type} entries")
+
+    # Look up the SRA study accession where it is missing
+    study_table["study"] = study_table[["geo", "study"]].apply(lambda x: lookup_sra_study(x[0]) if not x[1] else x[1], axis=1)
+
     # Filter invalid entries with multiple or no accessions (these are mostly GEO superseries)
     study_table.replace("", np.nan, inplace=True)
     study_table.dropna(axis='index', how='any', inplace=True)
+    logging.info(f"Found {len(study_table)} filtered {args.type} GEO-to-SRA study mappings")
+
     # The name of the output file is important for the rest of the pipeline
     output_file = path.join(args.output, "geo_{}_rnaseq.tsv".format(args.type))
+    logging.info(f"Writing file {output_file}")
     study_table.to_csv(output_file, sep='\t', index=False, header=False)

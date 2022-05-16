@@ -34,9 +34,9 @@ For microarrays, the -x should not be used as we need to download raw (.cel/txt)
 
 ## Subprocesses
 
-A python script `rnaseq_ena_gse_pooling.py` is used to retrieve ENA study ids and convert to GEO based GSE ids. This script depends on RNA-seqer API, which is used to retrieve ENA study ids and organism names from ENA (http://www.ebi.ac.uk/fg/rnaseq/api/json/getBulkRNASeqStudiesInSRA). GEO studies that have been previously downloaded in ArrayExpress (AE2) are filtered, so there are no redundant downloads. NCBI eutilis (http://eutils.ncbi.nlm.nih.gov/entrez/eutils) is used for converting filtered ENA study id to GSE id. The output list of converted GSE ids are stored as `geo_rnaseq.tsv` under `geo_import_supporting_files`. ENA ids that do not have meta-data in GEO are recorded in `NotInGEO_list.txt` that has ENA study id and associated organism name which may be useful for curators to prioritise for ENA import.
+A python script `geo_studies_list.py` is used to retrieve GEO study to SRA study accession mappings. The output list of retrieved GSE ids is stored as `geo_{bulkOrSinglecell}_rnaseq.tsv` under `geo_import_supporting_files`. 
 
-The `geo_import_cron.sh` script encapsulates this process and goes on to filter the GSExx ids (`geo_rnaseq.tsv`) list further to remove GSE ids that already exist in the `atlas_eligibility` table in the atlasprd3 database. The process produces a latest GEO accessions list `latest_geo_accessions.txt` ready to run batch GEO import.
+The `geo_import_cron.sh` script encapsulates this process and goes on to filter the GSExx ids (`geo_{bulkOrSinglecell}_rnaseq.tsv`) list further to remove GSE ids that already exist in the `atlas_eligibility` table in the Atlasprod database. The process produces a latest GEO accessions list `latest_geo_accessions.txt` ready to run batch GEO import.
 
 After the batch import is run, the `geo_import_magetab_eligibility.sh` script crawls the Downloads directory and runs 
 1) MAGE-TAB split into IDF/SDRF, 

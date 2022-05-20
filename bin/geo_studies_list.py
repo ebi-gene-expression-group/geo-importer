@@ -18,6 +18,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--type', help='Please provide type as "bulk" or "singlecell"', required=True)
     parser.add_argument('-o', '--output', help='Please provide absolute path to output directory', required=True)
+    parser.add_argument('-l', '--limit', help="Limit for number of results returned from ENA API")
     parser.add_argument('-v', '--verbose', action="store_const", const=10, default=20,
                         help="Print more detailed logging", )
     return parser.parse_args()
@@ -32,26 +33,23 @@ def is_singlecell(title):
     return bool(title) and bool(sc_regex.search(title))
 
 
-def get_geo_study_list(logger, bulk_or_singlecell, limit=100000, library_source="TRANSCRIPTOMIC"):
+def get_geo_study_list(logger, bulk_or_singlecell, limit=""):
     """Fetch list of GEO-brokered transcriptomics studies via ENA API
     and parse study XML to read title and organism.
     Returns a Pandas data frame for the given type (bulk or single cell)."""
 
     # Check for env variable to overwrite URL
-    # e.g. ENA_GEO_QUERY_URL='https://www.ebi.ac.uk/ena/browser/api/xml/search?result=read_study&query=library_source%3D%22TRANSCRIPTOMIC%22+AND+center_name%3D%22GEO%22&limit=100'
-    ena_url = environ.get("ENA_GEO_QUERY_URL")
-    if ena_url:
-        u = requests.get(ena_url)
+    # e.g. ENA_GEO_BASE_URL='https://www.ebi.ac.uk/ena/browser/api/xml/search'
 
-    else:
-        base_url = "https://www.ebi.ac.uk/ena/browser/api/xml/search?"
-        params = {"result": "read_study",
-                  "query": f"library_source=\"{library_source}\" AND center_name=\"GEO\"",
-                  "limit": str(limit),
-                  "gzip": "false",
-                  "dataPortal": "ena"
-                  }
-        u = requests.get(base_url, params=params)
+    base_url = environ.get("ENA_GEO_BASE_URL") or "https://www.ebi.ac.uk/ena/browser/api/xml/search"
+    params = {"result": "read_study",
+              "query": f"library_source=\"TRANSCRIPTOMIC\" AND center_name=\"GEO\"",
+              "gzip": "false",
+              "dataPortal": "ena"
+              }
+    if limit:
+        params["limit"] = str(limit)
+    u = requests.get(base_url, params=params)
 
     logging.debug(u.url)
     raw_xml = u.text
@@ -90,9 +88,11 @@ def lookup_sra_study(geo_accession):
     """Use EBI search API to retrieve the SRA study accession for a given GEO study accession
     if it is not found in the study XML"""
 
-    ebi_query = f"https://www.ebi.ac.uk/ebisearch/ws/rest/nucleotideSequences?query={geo_accession}&format=json"
-    logging.debug(ebi_query)
-    u = requests.get(ebi_query)
+    base_url = environ.get("EBI_SERACH_BASE_URL") or "https://www.ebi.ac.uk/ebisearch/ws/rest/nucleotideSequences"
+    params = {"query": geo_accession,
+              "format": "json"}
+    u = requests.get(base_url, params=params)
+    logging.debug(u.url)
     result = json.loads(u.text)
     for entry in result.get("entries", []):
         if entry.get("source", "") == "sra-study":
@@ -112,11 +112,18 @@ if __name__ == "__main__":
         print("Output path does not exist.")
         exit(1)
 
+    if args.limit:
+        try:
+            int(args.limit)
+        except ValueError:
+            print("Limit is not a numerical value.")
+            exit(1)
+
     logger = logging.getLogger()
     logging.basicConfig(format='%(levelname)s: %(message)s', level=args.verbose)
 
     logging.info("Retrieving GEO study list from ENA.")
-    study_table = get_geo_study_list(logger, args.type)
+    study_table = get_geo_study_list(logger, args.type, limit=args.limit)
 
     # Remove other columns for compatibility with further workflow
     try:

@@ -261,29 +261,3 @@ load_eligibility_to_db(){
   fi
 }
 
-
-# query experiments for species that are having reference genome in ISL
-# extract species and subspecies from RNA-seqer API call for ensembl, plants metazoa and wbps.
-query_rnaseq_atlas_eligibility() {
-IFS="
-"
-  dbConnection=$1
-
-  species_in_ensembl=$(curl -s "https://www.ebi.ac.uk/fg/rnaseq/api/tsv/0/getOrganisms/ensembl" | cut -f 1 | tail -n +2 | awk '{ gsub("_", " ") ; print $0 }' | sed -e 's/^./\U&/')
-  species_in_plants=$(curl -s "https://www.ebi.ac.uk/fg/rnaseq/api/tsv/0/getOrganisms/plants" | cut -f 1 | tail -n +2 | awk '{ gsub("_", " ") ; print $0 }' | sed -e 's/^./\U&/')
-  species_in_metazoa=$(curl -s "https://www.ebi.ac.uk/fg/rnaseq/api/tsv/0/getOrganisms/metazoa" | cut -f 1 | tail -n +2 | awk '{ gsub("_", " ") ; print $0 }' | sed -e 's/^./\U&/')
-  species_in_wbps=$(curl -s "https://www.ebi.ac.uk/fg/rnaseq/api/tsv/0/getOrganisms/wbps" | cut -f 1 | tail -n +2 | awk '{ gsub("_", " ") ; print $0 }' | sed -e 's/^./\U&/')
-
-  species_in_isl=$(printf '%s\n' "$species_in_ensembl" "$species_in_plants" "$species_in_metazoa" "$species_in_wbps")
-  output=""
-  echo -e "a2_acc'\t'na_study_id'\t'geo_acc'\t'organism'\t'status'\t'exp_type"
-  for species in $species_in_isl; do
-    var=$(echo "select DISTINCT ae2_acc, ena_study_id, geo_acc, organism,status, exp_type from rnaseq_atlas_eligibility where organism like'%$species';" | psql "$dbConnection" | tail -n +3 | head -n -2)
-    if [[ -z $var ]]; then
-      echo "query didn't succeed for the $species" > /dev/null
-    fi
-    output+="$var\n"
-  done
-
-  echo -e "$output" | sed -e '/^ *$/d'
-}

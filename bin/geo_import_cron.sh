@@ -66,9 +66,9 @@ pushd $supportingFilesPath
         GSEImport=$2
         type=$(echo $GSEImport | awk -F'_' '{print $2}')
         if [ "$type" == "bulk" ]; then
-            GSELoaded=$(echo "select geo_acc from rnaseq_atlas_eligibility;" | psql $dbConnection | tail -n +3 | head -n -2 | sed 's/ //g' | tr '\t' '\n' | sort -u)
+            GSELoaded=$(echo "select geo_acc from rnaseq_atlas_eligibility;" | psql -At $dbConnection | sed 's/ //g' | tr '\t' '\n' | sort -u)
         elif [ "$type" == "singlecell" ]; then
-            GSELoaded=$(echo "select geo_acc from sc_atlas_eligibility;" | psql $dbConnection | tail -n +3 | head -n -2 | sed 's/ //g' | tr '\t' '\n' | sort -u)
+            GSELoaded=$(echo "select geo_acc from sc_atlas_eligibility;" | psql -At $dbConnection | sed 's/ //g' | tr '\t' '\n' | sort -u)
         fi
         comm -23 <(cat $GSEImport | cut -f 1 | sort ) <(echo -e $GSELoaded | tr ' ' '\n' | sort )
     }

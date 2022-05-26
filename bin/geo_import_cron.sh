@@ -52,33 +52,15 @@ fi
 
 
 pushd $supportingFilesPath
-    ## Script which retrieves ENA study ids and organsim names for RNA-seq experiments from ENA
-    ## converts ENA study ids to GEO (GSE) ids using API (eutils.ncbi.nlm.nih.gov/entrez/eutils/)
-    ## ENA ids that do not exist in GEO are recorded in rnaseq_ena_gse_pooling.log
-    ## Filters GSE ids that have already been loaded in AE2
-    ## output of the script list of filtered GSE_ids/ENA_study_id as geo_${bulkORsinglecell}_rnaseq.tsv in desired output path
-    $projectRoot/bin/rnaseq_ena_gse_pooling.py --type $bulkORsinglecell --output $supportingFilesPath > ${bulkORsinglecell}_ena_gse_pooling.$today.log
+    ## Script which retrieves ENA study to SRA study ID mapping a
+    ## output of the script list of GSE_ids/ENA_study_id as geo_${bulkORsinglecell}_rnaseq.tsv in desired output path
+    $projectRoot/bin/geo_studies_list.py --type $bulkORsinglecell --output $supportingFilesPath > ${bulkORsinglecell}_ena_gse_pooling.$today.log
     if [ $? -ne 0 ]; then
         echo "ERROR: ${bulkORsinglecell}_ena_gse_pooling" >&2
         exit 1
     fi
 
-    ## ENA_study_ids list that do no exist in GEO import that will help curators to fetch studies from ENA directly
-    makeNotInGEOList() {
-        gsePoolingLog=$1
-        type=$(echo $gsePoolingLog | awk -F'_' '{print $1}')
-        cat $gsePoolingLog | grep "Not in GEO" | awk -F" " '{print $5}' > ${bulkORsinglecell}_ENA_IDs_NotInGEO.tmp
-        test -s "$gsePoolingLog" || (  >&2 echo "$0 gse pooling log file not found: $gsePoolingLog" ; exit 1 )
-        if [ "$type" == "bulk" ]; then
-            join -1 1 -2 2 -o 1.1,2.1 <(cat ${bulkORsinglecell}_ENA_IDs_NotInGEO.tmp | sort ) <(curl -s 'https://www.ebi.ac.uk/fg/rnaseq/api/tsv/getBulkRNASeqStudiesInSRA' | tail -n +2 | sort -k 2) | sort -u
-        elif [ "$type" == "singlecell" ]; then
-            join -1 1 -2 2 -o 1.1,2.1 <(cat ${bulkORsinglecell}_ENA_IDs_NotInGEO.tmp | sort ) <(curl -s 'https://www.ebi.ac.uk/fg/rnaseq/api/tsv/getSingleCellStudies' | tail -n +2 | sort -k 2) | sort -u
-        fi
-        rm -rf ${bulkORsinglecell}_ENA_IDs_NotInGEO.tmp
-    }
-    makeNotInGEOList ${bulkORsinglecell}_ena_gse_pooling.$today.log  > ${bulkORsinglecell}_NotInGEO_list.txt
-
-    ## remove ENA_IDs already been import before
+    ## remove ENA_IDs that have already been imported before
     filterGEOImport() {
         dbConnection=$1
         GSEImport=$2

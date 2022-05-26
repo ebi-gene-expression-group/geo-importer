@@ -56,7 +56,7 @@ pushd $supportingFilesPath
     ## output of the script list of GSE_ids/ENA_study_id as geo_${bulkORsinglecell}_rnaseq.tsv in desired output path
     $projectRoot/bin/geo_studies_list.py --type $bulkORsinglecell --output $supportingFilesPath > ${bulkORsinglecell}_ena_gse_pooling.$today.log
     if [ $? -ne 0 ]; then
-        echo "ERROR: ${bulkORsinglecell}_ena_gse_pooling" >&2
+        echo "ERROR: Something went wrong generating the ${bulkORsinglecell} GEO-to-SRA ID mapping (geo_studies_list.py)" >&2
         exit 1
     fi
 

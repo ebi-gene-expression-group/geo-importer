@@ -32,7 +32,7 @@ The `-x` additional flag indicates the supplementary files should not be downloa
 For microarrays, the -x should not be used as we need to download raw (.cel/txt) supplementary files. eg. usage: <br>
 `$ATLAS_PROD/sw/atlasinstall_prod/atlasprod/geo_import/import_geo_subs.pl -f list_of_GSE_ids.txt -o output_directory_path`
 
-## Subprocesses
+## Batch import of RNA-seq studies
 
 A python script `geo_studies_list.py` is used to retrieve GEO study to SRA study accession mappings. The output list of retrieved GSE ids is stored as `geo_{bulkOrSinglecell}_rnaseq.tsv` under `geo_import_supporting_files`. 
 

@@ -44,3 +44,5 @@ After the batch import is run, the `geo_import_magetab_eligibility.sh` script cr
 3) recording of the dataset in the database. 
 
 The optional parameter `-c` can be used to specify a "curation directory" where to copy the generated MAGE-TAB files. 
+
+NB: you may need to run **cpanm LWP::UserAgent::ProxyAny** to import the LWP User Agent if you see an error including this. Simply copy/paste into your local terminal

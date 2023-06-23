@@ -7,9 +7,9 @@ source $projectRoot/bin/geo_import_routines.sh
 
 # Capture call arguments
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <accession_type>"
-    echo "e.g. $0 ENAD" >&2
-    exit 1;
+	echo "Usage: $0 <accession_type>"
+	echo "e.g. $0 ENAD" >&2
+	exit 1;
 fi
 
 accession_type=$1
@@ -30,7 +30,7 @@ max_atlasdb_id=$(echo -e "select jobobject from atlas_jobs where JOBOBJECT like 
 
 meta_clone=$ATLAS_PROD/singlecell/scxa-metadata
 if [ ! -d "$meta_clone" ]; then
-    git clone $SCXA_METADATA_REPO $meta_clone
+	git clone $SCXA_METADATA_REPO $meta_clone
 fi
 pushd $meta_clone > /dev/null
 git checkout master && git pull > /dev/null
@@ -41,9 +41,9 @@ max_sc_id=$(find $meta_clone/${accession_type} -type f -name "E-$accession_type-
 
 ## ongoing curation
 if [ $accession_type == 'CURD' ]; then
-	max_curation=$(find $AE2_BASE_DIR/${accession_type} -type d -exec basename {} ';' |  sed 's/[^0-9]*//g' | sort -nr | head -n1)
+	max_curation=$(find $AE2_BASE_DIR/${accession_type} -type d -maxdepth 1 -exec basename {} ';' |  sed 's/[^0-9]*//g' | sort -nr | head -n1)
 elif [ $accession_type == 'ENAD' ]; then
-	max_curation=$(find $ATLAS_PROD/ENA_import/${accession_type} -type d -exec basename {} ';' |  sed 's/[^0-9]*//g' | sort -nr | head -n1)
+	max_curation=$(find $ATLAS_PROD/ENA_import/${accession_type} -type d -maxdepth 1 -exec basename {} ';' |  sed 's/[^0-9]*//g' | sort -nr | head -n1)
 fi
 
 ## maximum id from all sources
